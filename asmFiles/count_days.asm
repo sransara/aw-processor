@@ -38,7 +38,7 @@ mult_start:
   beq $11, $0, mult_even
 mult_odd:
   addu $20, $2, $20
-  addi $3, $3, -1
+  addiu $3, $3, -1
 mult_even:
   sll $2, $2, 0x1
   srl $3, $3, 0x1

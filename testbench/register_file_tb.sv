@@ -63,8 +63,8 @@ program test
 
     nRST = 1;
     rf.WEN = 1;
-    rf.wsel = 0;
-    rf.wdat = 22;
+    rf.wsel = 7;
+    rf.wdat = 'hDEADBEEF;
     rf.rsel1 = 0;
     rf.rsel2 = 0;
     #(PERIOD)

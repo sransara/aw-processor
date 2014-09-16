@@ -9,19 +9,21 @@ interface control_unit_if;
   import cpu_types_pkg::*;
 
   opcode_t opcode;
+  funct_t funct;
   logic RegDst, RegWr, PcToReg, ImmToReg, MemToReg;
   logic DatRead, DatWrite;
-  logic AluSrc;
-  logic BrEq, BrNeq, Jump, Jr;
+  logic BrEq, BrNeq, Jump, Jal, RegToPc;
   logic ExtOp, Halt;
+  logic ShamToAlu, ImmToAlu;
 
   // ports
   modport ci (
     input   opcode,
+    input   funct,
     output  RegDst, RegWr, PcToReg, ImmToReg, MemToReg,
     output  DatRead, DatWrite,
-    output  AluSrc,
-    output  BrEq, BrNeq, Jump, Jr,
+    output  ShamToAlu, ImmToAlu,
+    output  BrEq, BrNeq, Jump, Jal, RegToPc,
     output  ExtOp, Halt
   );
 

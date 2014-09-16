@@ -23,11 +23,11 @@ begin
     ALU_SRL : aluif.out = (aluif.port_a >> aluif.port_b);
     ALU_ADD : begin
               aluif.out = ($signed(aluif.port_a) +  $signed(aluif.port_b));
-              aluif.overflow = (msb_a == msb_b) ? (msb_a != msb_o) : 0;
+              aluif.overflow = (msb_a == msb_b) ? (msb_a != msb_o) : 1'b0;
               end
     ALU_SUB : begin
               aluif.out = ($signed(aluif.port_a) -  $signed(aluif.port_b));
-              aluif.overflow = (msb_a == ~msb_b) ? (msb_a != msb_o) : 0;
+              aluif.overflow = (msb_a == ~msb_b) ? (msb_a != msb_o) : 1'b0;
               end
     ALU_AND : aluif.out = (aluif.port_a &  aluif.port_b);
     ALU_OR  : aluif.out = (aluif.port_a |  aluif.port_b);

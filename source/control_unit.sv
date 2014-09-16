@@ -7,26 +7,36 @@ import cpu_types_pkg::*;
   control_unit_if.ci cuif
 );
 
-always_comb
-begin
-  cuif.RegDst = 1;
-  cuif.RegWr = 1;
-  cuif.PcToReg = 0;
-  cuif.ImmToReg = 0;
-  cuif.ExtOp = 0;
-  cuif.AluSrc = 0;
-  cuif.MemToReg = 0;
-  cuif.DatRead = 0;
-  cuif.DatWrite = 0;
-  cuif.BrEq = 0;
-  cuif.BrNeq = 0;
-  cuif.Jump = 0;
-  cuif.Jr = 0;
-  cuif.Halt = 0;
+opcode_t opcode;
+funct_t funct;
+assign opcode = cuif.opcode;
+assign funct = cuif.funct;
 
-  if(cuif.opcode == HALT) cuif.Halt = 1;
+assign cuif.RegDst = (opcode === RTYPE) && (funct !== JR);
+assign cuif.RegWr = ~((opcode === RTYPE) && (funct  === JR)) && (opcode !== BEQ)
+            && (opcode !== BNE) && (opcode !== SW) && (opcode !== J)
+            && (opcode !== HALT);
 
-end
+assign  cuif.ImmToReg = (opcode === LUI);
+assign  cuif.ExtOp = (opcode === ADDIU) || (opcode === LW) || (opcode === SW)
+            || (opcode === SLTIU) || (opcode == SLTI) || (opcode === LL) || (opcode === SC);
 
+assign  cuif.ShamToAlu = (opcode === RTYPE) && ((funct === SLL) || (funct === SRL));
+
+assign  cuif.ImmToAlu= (opcode !== RTYPE) && (opcode !== BEQ) && (opcode !== BNE)
+            && (opcode !== JAL) && (opcode !== J) && (opcode !== HALT);
+
+assign cuif.MemToReg = (opcode === LW) || (opcode === LL);
+assign cuif.DatRead = (opcode === LW) || (opcode === LL);
+assign cuif.DatWrite = (opcode === SW) || (opcode === SC);
+
+assign cuif.BrEq = (opcode === BEQ);
+assign cuif.BrNeq = (opcode === BNE);
+assign cuif.Jump = (opcode === J) || (opcode === JAL);
+assign cuif.RegToPc = (opcode === RTYPE) && (funct === JR);
+assign cuif.Jal = (opcode === JAL);
+assign cuif.PcToReg = (opcode === JAL);
+
+assign cuif.Halt = (opcode === HALT);
 
 endmodule

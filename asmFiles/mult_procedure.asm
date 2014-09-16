@@ -2,14 +2,14 @@ org 0x4000
   ori $sp, $0, 0xFFFC
   lw  $15, DATA_LENGTH($0)
   ori $16, $0, 0x0    # indexer
-  addi $5, $sp, -4    # store $sp for later
+  addiu $5, $sp, -4    # store $sp for later
 
 # register $4 will be used to store the values
 FRUITY_LOOP:
   beq $16, $15, BUNTY_LOOP
     lw $4, LONG_DATA($16)
     push $4
-    addi $16, $16, 0x4
+    addiu $16, $16, 0x4
   j FRUITY_LOOP
 
 BUNTY_LOOP:
@@ -31,7 +31,7 @@ mult_start:
   beq $11, $0, mult_even
 mult_odd:
   addu $20, $2, $20
-  addi $3, $3, -1
+  addiu $3, $3, -1
 mult_even:
   sll $2, $2, 0x1
   srl $3, $3, 0x1
