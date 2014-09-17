@@ -29,6 +29,7 @@ assign opcode  = idecoded.opcode;
 
 // Alu
 logic msb_imm;
+logic halt;
 logic [IMM_W-1:0] immwzeroes;
 logic [WORD_W-SHAM_W:0] shamzeroes;
 aluop_t alu_op, alu_ftop;
@@ -39,13 +40,13 @@ assign shamzeroes = '0;
 // MAPPINGS
 request_unit RQU(
   .CLK(CLK), .nRST(nRST), .DatRead(cuif.DatRead), .DatWrite(cuif.DatWrite),
-  .ihit(dpif.ihit), .dhit(dpif.dhit),
+  .ihit(dpif.ihit), .dhit(dpif.dhit), .halt(dpif.halt),
   .ReqiREN(dpif.imemREN), .ReqdREN(dpif.dmemREN), .ReqdWEN(dpif.dmemWEN)
 );
 register_file RFU(CLK, nRST, rfif);
 alu AU(aluif);
 decoder DEC(idecoded);
-pc PCU(.CLK(CLK), .nRST(nRST), .pcif(pcif));
+pc #(.PC_INIT(PC_INIT)) PCU(.CLK(CLK), .nRST(nRST), .pcif(pcif));
 control_unit CU(cuif);
 
 assign dpif.imemaddr = pcif.cpc;
@@ -62,13 +63,24 @@ assign dpif.dmemstore = rfif.rdat2;
   assign pcif.BrNeq = cuif.BrNeq;
   assign pcif.RegToPc = cuif.RegToPc;
   assign pcif.Jump = cuif.Jump;
-  assign pcif.Halt = cuif.Halt;
+  assign pcif.Halt = dpif.halt;
 // end pc glue
 
 // control unit glue
   assign cuif.opcode = opcode;
   assign cuif.funct = idecoded.funct;
-  assign dpif.halt = cuif.Halt;
+  assign halt = (cuif.Halt === 1);
+  always_ff @(negedge CLK) begin
+    if(dpif.halt === 0) begin
+      dpif.halt <= halt;
+    end
+    else if(dpif.halt === 1) begin
+      dpif.halt <= 1;
+    end
+    else begin
+      dpif.halt <= 0;
+    end
+  end
 // end cu glue
 
 // reg file glue logic

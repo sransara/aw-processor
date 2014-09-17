@@ -6,7 +6,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--file', help='.asm file to test')
-parser.add_argument('-s', '--syn', help='sim or syn')
+parser.add_argument('-s', '--syn', help='sim or syn', action='store_true')
 parser.add_argument('-v', '--verbose', help='print all kinds of output')
 
 args = parser.parse_args()

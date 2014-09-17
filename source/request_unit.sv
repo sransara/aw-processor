@@ -5,12 +5,12 @@ import cpu_types_pkg::word_t;
 (
   input logic CLK, nRST,
   input logic DatRead, DatWrite,
-  input logic ihit, dhit,
+  input logic ihit, dhit, halt,
   output logic ReqiREN, ReqdREN, ReqdWEN
 );
 
 logic InsRead;
-assign InsRead = 1;
+assign InsRead = 1 & ~halt;
 assign ReqiREN = InsRead;
 
 always_ff @(posedge CLK, negedge nRST)

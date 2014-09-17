@@ -8,6 +8,8 @@ import cpu_types_pkg::*;
   pc_if.pci pcif
 );
 
+parameter PC_INIT = 0;
+
 enum logic[1:0] {
   PC_BRZ  = 2'b10,
   PC_JR   = 2'b11,
