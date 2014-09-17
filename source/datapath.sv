@@ -49,36 +49,44 @@ decoder DEC(idecoded);
 pc #(.PC_INIT(PC_INIT)) PCU(.CLK(CLK), .nRST(nRST), .pcif(pcif));
 control_unit CU(cuif);
 
-assign dpif.imemaddr = pcif.cpc;
-assign dpif.dmemaddr = aluif.out;
-assign dpif.dmemstore = rfif.rdat2;
+// datapath
+  assign dpif.imemaddr = pcif.cpc;
+  assign dpif.dmemaddr = aluif.out;
+  assign dpif.dmemstore = rfif.rdat2;
+// end datapath
 
 // pc glue
-  assign pcif.imm = idecoded.imm;
-  assign pcif.addr = idecoded.addr;
-  assign pcif.ihit = dpif.ihit;
-  assign pcif.alu_zero = aluif.zero;
-  assign pcif.rdat = rfif.rdat1;
-  assign pcif.BrEq = cuif.BrEq;
-  assign pcif.BrNeq = cuif.BrNeq;
-  assign pcif.RegToPc = cuif.RegToPc;
-  assign pcif.Jump = cuif.Jump;
-  assign pcif.Halt = dpif.halt;
+  logic [1:0] shift_two_zeroes;
+  assign pcif.wen = dpif.ihit;
+  assign shift_two_zeroes = '0;
+
+  always_comb
+  begin
+      if((cuif.BrEq & aluif.zero) || (cuif.BrNeq & ~aluif.zero)) begin
+        pcif.npc = pcif.pc_plus + { {IMM_W-2{msb_imm}}, idecoded.imm, shift_two_zeroes };
+      end
+      else if(cuif.RegToPc) begin
+        pcif.npc = rfif.rdat1;
+      end
+      else if(cuif.Jump) begin
+        pcif.npc = { pcif.pc_plus[WORD_W-1:WORD_W-4], idecoded.addr, shift_two_zeroes };
+      end
+      else begin
+        pcif.npc = pcif.pc_plus;
+      end
+  end
 // end pc glue
 
 // control unit glue
   assign cuif.opcode = opcode;
   assign cuif.funct = idecoded.funct;
   assign halt = (cuif.Halt === 1);
-  always_ff @(negedge CLK) begin
-    if(dpif.halt === 0) begin
-      dpif.halt <= halt;
-    end
-    else if(dpif.halt === 1) begin
-      dpif.halt <= 1;
-    end
-    else begin
+  always_ff @(negedge CLK or negedge nRST) begin
+    if(~nRST) begin
       dpif.halt <= 0;
+    end
+    else if(dpif.halt === 0) begin
+      dpif.halt <= halt;
     end
   end
 // end cu glue

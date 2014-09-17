@@ -35,8 +35,8 @@ module system_fpga (
   assign syif.WEN = 0;
   assign syif.store = 0;
 
-  //assign LEDR[15:0] = SW[15:0];
-  assign LEDR[15:0] = syif.load[15:0];
+  assign LEDR[15:0] = SW[15:0];
+  //assign LEDR[15:0] = syif.load[15:0];
 
   // map board to system
   assign LEDG[8] = syif.halt;

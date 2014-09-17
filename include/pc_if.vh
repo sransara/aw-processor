@@ -8,22 +8,13 @@ interface pc_if;
   // import types
   import cpu_types_pkg::*;
 
-  logic [IMM_W-1:0] imm;
-  logic [ADDR_W-1:0] addr;
-  logic ihit;
-  logic alu_zero;
-  logic BrEq, BrNeq, Jump, RegToPc, Halt;
-  word_t rdat;
   word_t pc_plus;
-  word_t cpc;
+  word_t npc, cpc;
   logic wen;
 
   // ports
   modport pci (
-    input wen,
-    input alu_zero, ihit, imm, addr,
-    input BrEq, BrNeq, Jump, RegToPc, Halt,
-    input rdat,
+    input wen, npc,
     output cpc, pc_plus
   );
 
