@@ -1,9 +1,6 @@
-## A wild processor appeared
-....
-
+# A wild processor appeared
 ### Level 2 processor
-#### Type: Electric
-#### Special Attack: MIPS
-
-Evoulution
-- register ➔ singlecycle ➔ pipelined
+##### Type: Electric
+##### Special Attack: MIPS
+****
+**Evoulution** - register ➔ singlecycle ➔ pipelined
