@@ -10,8 +10,9 @@ interface control_unit_if;
 
   opcode_t opcode;
   funct_t funct;
-  logic RegDst, RegWr, PcToReg, ImmToReg, MemToReg;
-  logic DatRead, DatWrite;
+  aluop_t aluop;
+  logic RegDst, RegWr, ImmToReg;
+  logic DataRead, DataWrite;
   logic BrEq, BrNeq, Jump, Jal, RegToPc;
   logic ExtOp, Halt;
   logic ShamToAlu, ImmToAlu;
@@ -20,8 +21,9 @@ interface control_unit_if;
   modport ci (
     input   opcode,
     input   funct,
-    output  RegDst, RegWr, PcToReg, ImmToReg, MemToReg,
-    output  DatRead, DatWrite,
+    output  aluop,
+    output  RegDst, RegWr, ImmToReg,
+    output  DataRead, DataWrite,
     output  ShamToAlu, ImmToAlu,
     output  BrEq, BrNeq, Jump, Jal, RegToPc,
     output  ExtOp, Halt

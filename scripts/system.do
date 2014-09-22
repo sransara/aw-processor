@@ -6,19 +6,22 @@ add wave -noupdate /system_tb/nRST
 add wave -noupdate /system_tb/DUT/CPU/halt
 add wave -noupdate /system_tb/DUT/CPU/CC/ccif/iload
 add wave -noupdate /system_tb/DUT/CPU/DP/CU/opcode
-add wave -noupdate /system_tb/DUT/CPU/DP/pcif/ihit
 add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/pcif/cpc
-add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/PCU/npc
-add wave -noupdate /system_tb/DUT/CPU/DP/pcif/BrEq
-add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rdat1
+add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/pcif/npc
+add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/pcif/pc_plus
+add wave -noupdate /system_tb/DUT/CPU/DP/pcif/wen
+add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/rfif/rdat1
 add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rdat2
-add wave -noupdate /system_tb/DUT/CPU/DP/rfif/wsel
-add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rsel1
+add wave -noupdate -radix unsigned /system_tb/DUT/CPU/DP/rfif/wsel
+add wave -noupdate -radix unsigned /system_tb/DUT/CPU/DP/rfif/rsel1
 add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rsel2
-add wave -noupdate /system_tb/DUT/CPU/DP/rfif/wdat
-add wave -noupdate /system_tb/DUT/CPU/DP/pcif/alu_zero
+add wave -noupdate -radix unsigned /system_tb/DUT/CPU/DP/rfif/wdat
+add wave -noupdate /system_tb/DUT/CPU/dcif/ihit
+add wave -noupdate /system_tb/DUT/CPU/dcif/imemREN
+add wave -noupdate /system_tb/DUT/CPU/ccif/iwait
+add wave -noupdate /system_tb/DUT/RAM/ramif/ramstate
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {286460 ps} 0}
+WaveRestoreCursors {{Cursor 1} {290746 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -34,4 +37,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {235210 ps} {403226 ps}
+WaveRestoreZoom {0 ps} {672064 ps}

@@ -1,28 +1,12 @@
 org 0x0000
-ori $1, $0, 0x1337
-ori $2, $0, 0x4444
-bne $1, $1, dontcomehere
-bne $2, $1, comehere
-ori $1, $0, 0xBAD3
-comebackhere:
-  lw $1, 0($2)
-  sw $1, 4($2)
-  sw $1, 8($2)
-  sw $1, 12($2)
-  sw $1, -16($2)
-  sw $1, -20($2)
-  j end
+ori $1, $0, dumphere
+jal mmm
+ori $2, $0, 1111
+j end
 
-comehere:
-  nor $1, $2, $1
-  sw $1, 0($2)
-  ori $1, $0, 0xBAD8
-  bne $1, $2, comebackhere
-  sw $1, 0($2)
-
-dontcomehere:
-  ori $1, $0, 0xBAD1
-  sw $1, 0($2)
+mmm:
+  sw $31, 0($1)
+  jr $31
 
 end:
   halt

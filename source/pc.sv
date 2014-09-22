@@ -15,7 +15,7 @@ always_ff @(posedge CLK, negedge nRST)
 begin
   if(!nRST)
   begin
-    pcif.cpc <= '0;
+    pcif.cpc <= PC_INIT;
   end
   else if(pcif.wen)
   begin

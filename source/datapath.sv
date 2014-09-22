@@ -20,56 +20,52 @@ register_file_if rfif();
 decoder_if idecoded();
 alu_if aluif();
 pc_if pcif();
+request_unit_if ruif();
 control_unit_if cuif();
 
-// Definitions
-opcode_t opcode;
-assign idecoded.instruction = dpif.imemload;
-assign opcode  = idecoded.opcode;
-
-// Alu
-logic msb_imm;
-logic halt;
-logic [IMM_W-1:0] immwzeroes;
-logic [WORD_W-SHAM_W:0] shamzeroes;
-aluop_t alu_op, alu_ftop;
-assign msb_imm = idecoded.imm[IMM_W-1];
-assign immwzeroes = '0;
-assign shamzeroes = '0;
-
 // MAPPINGS
-request_unit RQU(
-  .CLK(CLK), .nRST(nRST), .DatRead(cuif.DatRead), .DatWrite(cuif.DatWrite),
-  .ihit(dpif.ihit), .dhit(dpif.dhit), .halt(dpif.halt),
-  .ReqiREN(dpif.imemREN), .ReqdREN(dpif.dmemREN), .ReqdWEN(dpif.dmemWEN)
-);
-register_file RFU(CLK, nRST, rfif);
+request_unit RQU(.CLK(CLK), .nRST(nRST), .ruif(ruif));
+register_file RFU(.CLK(CLK), .nRST(nRST), .rfif(rfif));
 alu AU(aluif);
 decoder DEC(idecoded);
 pc #(.PC_INIT(PC_INIT)) PCU(.CLK(CLK), .nRST(nRST), .pcif(pcif));
 control_unit CU(cuif);
 
 // datapath
+  assign idecoded.instruction = dpif.imemload;
   assign dpif.imemaddr = pcif.cpc;
   assign dpif.dmemaddr = aluif.out;
   assign dpif.dmemstore = rfif.rdat2;
 // end datapath
 
+// request unit
+  assign ruif.DataRead = cuif.DataRead;
+  assign ruif.DataWrite = cuif.DataWrite;
+  assign ruif.ihit = dpif.ihit;
+  assign ruif.dhit = dpif.dhit;
+  assign ruif.halt = dpif.halt;
+  assign dpif.imemREN = ruif.req_iREN;
+  assign dpif.dmemREN = ruif.req_dREN;
+  assign dpif.dmemWEN = ruif.req_dWEN;
+// end request unit
+
+// general
+logic msb_imm;
+assign msb_imm = idecoded.imm[IMM_W-1];
+
 // pc glue
-  logic [1:0] shift_two_zeroes;
   assign pcif.wen = dpif.ihit;
-  assign shift_two_zeroes = '0;
 
   always_comb
   begin
       if((cuif.BrEq & aluif.zero) || (cuif.BrNeq & ~aluif.zero)) begin
-        pcif.npc = pcif.pc_plus + { {IMM_W-2{msb_imm}}, idecoded.imm, shift_two_zeroes };
+        pcif.npc = pcif.pc_plus + { {IMM_W-2{msb_imm}}, idecoded.imm, 2'b0 };
       end
       else if(cuif.RegToPc) begin
         pcif.npc = rfif.rdat1;
       end
       else if(cuif.Jump) begin
-        pcif.npc = { pcif.pc_plus[WORD_W-1:WORD_W-4], idecoded.addr, shift_two_zeroes };
+        pcif.npc = { pcif.pc_plus[WORD_W-1:WORD_W-4], idecoded.addr, 2'b0 };
       end
       else begin
         pcif.npc = pcif.pc_plus;
@@ -78,9 +74,12 @@ control_unit CU(cuif);
 // end pc glue
 
 // control unit glue
-  assign cuif.opcode = opcode;
+  logic halt;
+
+  assign cuif.opcode = idecoded.opcode;
   assign cuif.funct = idecoded.funct;
   assign halt = (cuif.Halt === 1);
+
   always_ff @(negedge CLK or negedge nRST) begin
     if(~nRST) begin
       dpif.halt <= 0;
@@ -92,9 +91,13 @@ control_unit CU(cuif);
 // end cu glue
 
 // reg file glue logic
+  logic [IMM_W-1:0] immwzeroes;
+  assign immwzeroes = '0;
+
   assign rfif.WEN = cuif.RegWr;
   assign rfif.rsel1 = idecoded.rs;
   assign rfif.rsel2 = idecoded.rt;
+
   always_comb
   begin
     rfif.wsel = idecoded.rt;
@@ -107,19 +110,22 @@ control_unit CU(cuif);
   always_comb
   begin
     rfif.wdat = aluif.out;
-    if(cuif.PcToReg)
+    if(cuif.Jal)
       rfif.wdat = pcif.pc_plus;
     else if(cuif.ImmToReg)
       // Zero padder
       rfif.wdat = word_t'({ idecoded.imm, immwzeroes});
-    else if(cuif.MemToReg)
+    else if(cuif.DataRead)
       rfif.wdat = dpif.dmemload;
   end
 // end reg file glue
 
 // alu glue logic
+  logic [WORD_W-SHAM_W:0] shamzeroes;
+  assign shamzeroes = '0;
+
   assign aluif.port_a = rfif.rdat1;
-  assign aluif.aluop = alu_op;
+  assign aluif.aluop = cuif.aluop;
 
   // alu port_b select
   always_comb
@@ -137,45 +143,6 @@ control_unit CU(cuif);
         aluif.port_b = word_t'({ immwzeroes, idecoded.imm });
       end
     end
-  end
-
-  // alu control logic
-  always_comb
-  begin
-    alu_op = ALU_ADD;
-    casez (opcode)
-      RTYPE:  alu_op = alu_ftop;
-      ADDIU:  alu_op = ALU_ADD;
-      ANDI:   alu_op = ALU_AND;
-      ORI:    alu_op = ALU_OR;
-      SLTI:   alu_op = ALU_SLT;
-      SLTIU:  alu_op = ALU_SLTU;
-      XORI:   alu_op = ALU_XOR;
-      BEQ:    alu_op = ALU_SUB;
-      BNE:    alu_op = ALU_SUB;
-      SW:     alu_op = ALU_ADD;
-      LW:     alu_op = ALU_ADD;
-    endcase
-  end
-
-  // alu func_t to aluop_t
-  always_comb
-  begin
-    alu_ftop = ALU_ADD;
-    casez (idecoded.funct)
-      SLL:  alu_ftop = ALU_SLL;
-      SRL:  alu_ftop = ALU_SRL;
-      ADD:  alu_ftop = ALU_ADD;
-      ADDU: alu_ftop = ALU_ADD;
-      SUB:  alu_ftop = ALU_SUB;
-      SUBU: alu_ftop = ALU_SUB;
-      AND:  alu_ftop = ALU_AND;
-      OR:   alu_ftop = ALU_OR;
-      XOR:  alu_ftop = ALU_XOR;
-      NOR:  alu_ftop = ALU_NOR;
-      SLT:  alu_ftop = ALU_SLT;
-      SLTU: alu_ftop = ALU_SLTU;
-    endcase
   end
 // end alu glue
 

@@ -1,34 +1,31 @@
+`include "request_unit_if.vh"
 `include "cpu_types_pkg.vh"
 
 module request_unit
 import cpu_types_pkg::word_t;
 (
   input logic CLK, nRST,
-  input logic DatRead, DatWrite,
-  input logic ihit, dhit, halt,
-  output logic ReqiREN, ReqdREN, ReqdWEN
+  request_unit_if.r ruif
 );
 
-logic InsRead;
-assign InsRead = 1 & ~halt;
-assign ReqiREN = InsRead;
+assign ruif.req_iREN = 1 & ~ruif.halt;
 
 always_ff @(posedge CLK, negedge nRST)
 begin
   if(!nRST)
   begin
-    ReqdREN <= 0;
-    ReqdWEN <= 0;
+    ruif.req_dREN <= 0;
+    ruif.req_dWEN <= 0;
   end
-  else if(ihit)
+  else if(ruif.ihit)
   begin
-    ReqdREN <= DatRead;
-    ReqdWEN <= DatWrite;
+    ruif.req_dREN <= ruif.DataRead;
+    ruif.req_dWEN <= ruif.DataWrite;
   end
-  else if(dhit)
+  else if(ruif.dhit)
   begin
-    ReqdREN <= 0;
-    ReqdWEN <= 0;
+    ruif.req_dREN <= 0;
+    ruif.req_dWEN <= 0;
   end
 end
 

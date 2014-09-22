@@ -46,8 +46,8 @@ DATA_LENGTH:
   # data length * 4
   cfw 20
 LONG_DATA:
-  cfw 0x2
-  cfw 0x2
-  cfw 0x2
-  cfw 0x2
-  cfw 0x32
+  cfw -1
+  cfw -2
+  cfw -1000
+  cfw 0xFFFFFFF
+  cfw 0x1232343
