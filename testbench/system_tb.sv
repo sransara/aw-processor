@@ -66,7 +66,7 @@ program test(input logic CLK, output logic nRST, system_if.tb syif);
     syif.WEN = 0;
     syif.REN = 0;
     @(posedge CLK);
-    $display("%0dns Starting Processor.", $time);
+    $display("Starting Processor.", $time);
     nRST = 1;
     // wait for halt
     while (!syif.halt)
