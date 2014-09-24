@@ -16,26 +16,13 @@ module register_file_tb;
   parameter PERIOD = 10;
 
   logic CLK = 0, nRST;
-<<<<<<< HEAD
-=======
-
-  // test vars
-  int v1 = 1;
-  int v2 = 4721;
-  int v3 = 25119;
->>>>>>> 3f7f4ff63c60e4f842d19b9da798ed96487b6f5e
-
   // clock
   always #(PERIOD/2) CLK++;
 
   // interface
   register_file_if rfif ();
   // test program
-<<<<<<< HEAD
   test #(.PERIOD (PERIOD)) PROG (CLK, nRST, rfif.tb);
-=======
-  test PROG ();
->>>>>>> 3f7f4ff63c60e4f842d19b9da798ed96487b6f5e
   // DUT
 `ifndef MAPPED
   register_file DUT(CLK, nRST, rfif);
@@ -55,7 +42,6 @@ module register_file_tb;
 
 endmodule
 
-<<<<<<< HEAD
 program test
 (
   input logic CLK,
@@ -123,7 +109,4 @@ program test
 
     $finish;
   end
-=======
-program test;
->>>>>>> 3f7f4ff63c60e4f842d19b9da798ed96487b6f5e
 endprogram
