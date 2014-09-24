@@ -8,7 +8,7 @@ interface decoder_if;
   // import types
   import cpu_types_pkg::*;
 
-  word_t instruction;
+  word_t load;
   opcode_t opcode;
   funct_t funct;
   regbits_t rs, rd, rt;
@@ -18,7 +18,7 @@ interface decoder_if;
 
   // alu ports
   modport dif (
-    input   instruction,
+    input   load,
     output  opcode, funct, rs, rd, rt, addr, imm, shamt
   );
 endinterface

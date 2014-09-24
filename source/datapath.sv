@@ -6,9 +6,10 @@
 // data path interface
 `include "datapath_cache_if.vh"
 `include "cpu_types_pkg.vh"
+`include "my_types_pkg.vh"
 
 module datapath
-import cpu_types_pkg::*;
+import cpu_types_pkg::*, my_types_pkg::*;
 (
   input logic CLK, nRST,
   datapath_cache_if.dp dpif
@@ -16,134 +17,221 @@ import cpu_types_pkg::*;
 // pc init
 parameter PC_INIT = 0;
 
+// All the kings horses
+logic pipe_WEN, ifid_WEN, ifid_FLUSH;
+ifid_t  ifid, ifid_n;
+idex_t  idex, idex_n;
+exmem_t exmem, exmem_n;
+memwb_t memwb, memwb_n;
+
 register_file_if rfif();
-decoder_if idecoded();
+decoder_if instruction();
 alu_if aluif();
 pc_if pcif();
-request_unit_if ruif();
 control_unit_if cuif();
 
 // MAPPINGS
-request_unit RQU(.CLK(CLK), .nRST(nRST), .ruif(ruif));
 register_file RFU(.CLK(CLK), .nRST(nRST), .rfif(rfif));
 alu AU(aluif);
-decoder DEC(idecoded);
+decoder DEC(instruction);
 pc #(.PC_INIT(PC_INIT)) PCU(.CLK(CLK), .nRST(nRST), .pcif(pcif));
 control_unit CU(cuif);
+pipeline_reg PIPER (
+  CLK, nRST, pipe_WEN,
+  ifid_WEN, ifid_FLUSH,
+  ifid_n, idex_n, exmem_n, memwb_n,
+  ifid, idex, exmem, memwb
+);
+//forwarding_unit FU(fuif);
 
-// datapath
-  assign idecoded.instruction = dpif.imemload;
-  assign dpif.imemaddr = pcif.cpc;
-  assign dpif.dmemaddr = aluif.out;
-  assign dpif.dmemstore = rfif.rdat2;
-// end datapath
+// All about Hzards : TODO
+  assign pipe_WEN = dpif.dhit | dpif.ihit;
+  assign ifid_WEN = dpif.ihit;
+  assign ifid_FLUSH = dpif.dhit | idex.Halt;
 
-// request unit
-  assign ruif.DataRead = cuif.DataRead;
-  assign ruif.DataWrite = cuif.DataWrite;
-  assign ruif.ihit = dpif.ihit;
-  assign ruif.dhit = dpif.dhit;
-  assign ruif.halt = dpif.halt;
-  assign dpif.imemREN = ruif.req_iREN;
-  assign dpif.dmemREN = ruif.req_dREN;
-  assign dpif.dmemWEN = ruif.req_dWEN;
-// end request unit
+// Going forward
+/*
+  assign fuif.idex_rs = idex.rs;
+  assign fuif.idex_rt = idex.rt;
+  assign fuif.exmem_rd = exmem.rd;
+  assign fuif.memwb_rd = memwb.rd;
+*/
+// pipeline stuff
+  // IF and D
+  assign ifid_n.imemload = dpif.imemload;
+  assign ifid_n.pc_plus = pcif.pc_plus;
+  // end IF and D
+
+  // D and EX
+  assign idex_n.rs = instruction.rs;
+  assign idex_n.rt = instruction.rt;
+  assign idex_n.rd = instruction.rd;
+  assign idex_n.funct = instruction.funct;
+  assign idex_n.shamt = instruction.shamt;
+  assign idex_n.imm = instruction.imm;
+  assign idex_n.addr = instruction.addr;
+
+  assign idex_n.aluop = cuif.aluop;
+  assign idex_n.RegDst = cuif.RegDst;
+  assign idex_n.RegWr = cuif.RegWr;
+  assign idex_n.ExtOp = cuif.ExtOp;
+  assign idex_n.ShamToAlu = cuif.ShamToAlu;
+  assign idex_n.ImmToAlu = cuif.ImmToAlu;
+  assign idex_n.ImmToReg = cuif.ImmToReg;
+  assign idex_n.DataRead = cuif.DataRead;
+  assign idex_n.DataWrite = cuif.DataWrite;
+  assign idex_n.BrEq = cuif.BrEq;
+  assign idex_n.BrNeq = cuif.BrNeq;
+  assign idex_n.Jump = cuif.Jump;
+  assign idex_n.Jal = cuif.Jal;
+  assign idex_n.Jr = cuif.Jr;
+  assign idex_n.Halt = cuif.Halt;
+
+  assign idex_n.rdat1 = rfif.rdat1;
+  assign idex_n.rdat2 = rfif.rdat2;
+
+  assign idex_n.pc_plus = ifid.pc_plus;
+  // end D and EX
+
+  // EX and MEM
+  assign exmem_n.aluout = aluif.out;
+  assign exmem_n.zero = aluif.zero;
+
+  assign exmem_n.imm = idex.imm;
+
+  assign exmem_n.RegWr = idex.RegWr;
+  assign exmem_n.DataRead = idex.DataRead;
+  assign exmem_n.DataWrite = idex.DataWrite;
+  assign exmem_n.ImmToReg = idex.ImmToReg;
+  assign exmem_n.BrEq = idex.BrEq;
+  assign exmem_n.BrNeq = idex.BrNeq;
+  assign exmem_n.Jump = idex.Jump;
+  assign exmem_n.Jr = idex.Jr;
+  assign exmem_n.Jal = idex.Jal;
+  assign exmem_n.Halt = idex.Halt;
+
+  assign exmem_n.rdat1 = idex.rdat1;
+  assign exmem_n.rdat2 = idex.rdat2;
+
+  assign exmem_n.wsel = idex.RegDst ? idex.rd : (idex.Jal ? 5'd31 : idex.rt);
+
+  assign exmem_n.pc_plus = idex.pc_plus;
+  // end EX and MEM
+
+  // MEM and WB
+  assign memwb_n.dmemload = dpif.dmemload;
+
+  assign memwb_n.imm = exmem.imm;
+
+  assign memwb_n.RegWr = exmem.RegWr;
+  assign memwb_n.DataRead = exmem.DataRead;
+  assign memwb_n.ImmToReg = exmem.ImmToReg;
+  assign memwb_n.Jal = exmem.Jal;
+
+  assign memwb_n.aluout = exmem.aluout;
+  assign memwb_n.wsel = exmem.wsel;
+  assign memwb_n.Halt = exmem.Halt;
+
+  assign memwb_n.pc_plus = exmem.pc_plus;
+  // end MEM and WB
+// end pipeline stuff
 
 // general
-logic msb_imm;
-assign msb_imm = idecoded.imm[IMM_W-1];
+logic [IMM_W-1:0] immwzeroes;
+assign immwzeroes = '0;
 
-// pc glue
+// IF
   assign pcif.wen = dpif.ihit;
+  assign dpif.imemaddr = pcif.cpc;
 
-  always_comb
-  begin
-      if((cuif.BrEq & aluif.zero) || (cuif.BrNeq & ~aluif.zero)) begin
-        pcif.npc = pcif.pc_plus + { {IMM_W-2{msb_imm}}, idecoded.imm, 2'b0 };
-      end
-      else if(cuif.RegToPc) begin
-        pcif.npc = rfif.rdat1;
-      end
-      else if(cuif.Jump) begin
-        pcif.npc = { pcif.pc_plus[WORD_W-1:WORD_W-4], idecoded.addr, 2'b0 };
-      end
-      else begin
-        pcif.npc = pcif.pc_plus;
-      end
-  end
-// end pc glue
+// ID
+  assign instruction.load = ifid.imemload;
+  // reg file glue logic
+    assign rfif.rsel1 = instruction.rs;
+    assign rfif.rsel2 = instruction.rt;
+  // end reg file glue
+  assign cuif.opcode = instruction.opcode;
+  assign cuif.funct = instruction.funct;
 
-// control unit glue
-  logic halt;
+// EX
+  // alu glue logic
+    logic [WORD_W-SHAM_W:0] shamzeroes;
+    assign shamzeroes = '0;
 
-  assign cuif.opcode = idecoded.opcode;
-  assign cuif.funct = idecoded.funct;
-  assign halt = (cuif.Halt === 1);
+    assign aluif.port_a = idex.rdat1;
+    assign aluif.aluop = idex.aluop;
 
-  always_ff @(negedge CLK or negedge nRST) begin
-    if(~nRST) begin
-      dpif.halt <= 0;
-    end
-    else if(dpif.halt === 0) begin
-      dpif.halt <= halt;
-    end
-  end
-// end cu glue
-
-// reg file glue logic
-  logic [IMM_W-1:0] immwzeroes;
-  assign immwzeroes = '0;
-
-  assign rfif.WEN = cuif.RegWr;
-  assign rfif.rsel1 = idecoded.rs;
-  assign rfif.rsel2 = idecoded.rt;
-
-  always_comb
-  begin
-    rfif.wsel = idecoded.rt;
-    if(cuif.RegDst)
-      rfif.wsel = idecoded.rd;
-    else if(cuif.Jal)
-      rfif.wsel = 5'd31;
-  end
-  // wdat selector MUX
-  always_comb
-  begin
-    rfif.wdat = aluif.out;
-    if(cuif.Jal)
-      rfif.wdat = pcif.pc_plus;
-    else if(cuif.ImmToReg)
-      // Zero padder
-      rfif.wdat = word_t'({ idecoded.imm, immwzeroes});
-    else if(cuif.DataRead)
-      rfif.wdat = dpif.dmemload;
-  end
-// end reg file glue
-
-// alu glue logic
-  logic [WORD_W-SHAM_W:0] shamzeroes;
-  assign shamzeroes = '0;
-
-  assign aluif.port_a = rfif.rdat1;
-  assign aluif.aluop = cuif.aluop;
-
-  // alu port_b select
-  always_comb
-  begin
-    aluif.port_b = rfif.rdat2;
-    if(cuif.ShamToAlu) begin
-      aluif.port_b = word_t'({ shamzeroes, idecoded.shamt });
-    end else if(cuif.ImmToAlu) begin
-      if(cuif.ExtOp) begin
-        // sign extend
-        aluif.port_b = word_t'({ {IMM_W{msb_imm}}, idecoded.imm });
-      end
-      else begin
-        // zero extend
-        aluif.port_b = word_t'({ immwzeroes, idecoded.imm });
+    // alu port_b select
+    always_comb
+    begin
+      if(idex.ShamToAlu) begin
+        aluif.port_b = word_t'({ shamzeroes, idex.shamt });
+      end else if(idex.ImmToAlu) begin
+        if(idex.ExtOp) begin
+          // sign extend
+          aluif.port_b = word_t'({{IMM_W{idex.imm[IMM_W-1]}}, idex.imm });
+        end
+        else begin
+          // zero extend
+          aluif.port_b = word_t'({ immwzeroes, idex.imm });
+        end
+      end else begin
+        aluif.port_b = idex.rdat2;
       end
     end
-  end
-// end alu glue
+  // end alu glue
+  // pc glue
+    word_t pc_npc_branch, pc_npc_addr;
+    always_comb
+    begin
+        pc_npc_branch = idex.pc_plus + {{IMM_W-2{idex.imm[IMM_W-1]}}, idex.imm, 2'b0 };
+        pc_npc_addr  = { idex.pc_plus[WORD_W-1:WORD_W-4], idex.addr, 2'b0 };
+    end
+  // end pc glue
+
+// MEM
+  // datacache
+    assign dpif.dmemaddr = exmem.aluout;
+    assign dpif.dmemstore = exmem.rdat2;
+    assign dpif.dmemWEN = exmem.DataWrite;
+    assign dpif.dmemREN = exmem.DataRead;
+  // pc glue
+    always_comb
+    begin
+        if((exmem.BrEq & exmem.zero) || (exmem.BrNeq & ~exmem.zero)) begin
+          pcif.npc = pc_npc_branch;
+        end
+        else if(exmem.Jr) begin
+          pcif.npc = exmem.rdat1;
+        end
+        else if(exmem.Jump) begin
+          pcif.npc = pc_npc_addr;
+        end
+        else begin
+          pcif.npc = pcif.pc_plus;
+        end
+    end
+  // end pc glue
+
+// WB
+  // datacache
+    assign dpif.imemREN = ~memwb.Halt;
+    assign dpif.halt = memwb.Halt;
+  // reg file glue logic - writes
+    assign rfif.wsel = memwb.wsel;
+    assign rfif.WEN = memwb.RegWr;
+    // wdat selector MUX
+    always_comb
+    begin
+      if(memwb.Jal)
+        rfif.wdat = memwb.pc_plus;
+      else if(memwb.ImmToReg)
+        // Zero padder
+        rfif.wdat = word_t'({ memwb.imm, immwzeroes});
+      else if(memwb.DataRead)
+        rfif.wdat = memwb.dmemload;
+      else
+        rfif.wdat = memwb.aluout;
+    end
 
 endmodule

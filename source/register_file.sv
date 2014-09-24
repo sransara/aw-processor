@@ -10,7 +10,7 @@ import cpu_types_pkg::word_t;
 
 word_t register[31:0];
 
-always_ff @(posedge CLK, negedge nRST)
+always_ff @(negedge CLK, negedge nRST)
 begin
   if(!nRST)
   begin

@@ -32,7 +32,7 @@ assign cuif.DataWrite = (opcode === SW) || (opcode === SC);
 assign cuif.BrEq = (opcode === BEQ);
 assign cuif.BrNeq = (opcode === BNE);
 assign cuif.Jump = (opcode === J) || (opcode === JAL);
-assign cuif.RegToPc = (opcode === RTYPE) && (funct === JR);
+assign cuif.Jr = (opcode === RTYPE) && (funct === JR);
 assign cuif.Jal = (opcode === JAL);
 
 assign cuif.Halt = (opcode === HALT);

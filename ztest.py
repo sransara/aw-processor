@@ -27,10 +27,10 @@ for fname in os.listdir(testdir):
 
     if(fname.endswith('.asm')):
         asm = testdir + fname
-        trout = testdir + 'memsim.hex'
+        trout = 'memsim.hex'
         myout = 'memcpu.hex'
 
-        recommand = 'asm asmFiles/' + fname + '; cd asmFiles; asm ' + fname + '; sim > /dev/null; cd .. ;'
+        recommand = 'asm asmFiles/' + fname + '; sim > /dev/null;'
         if(sym == 'syn'):
           sycommand = 'make system.syn ' + std
         excommand = 'make system.sim ' + std
@@ -49,6 +49,8 @@ for fname in os.listdir(testdir):
             dfout = subprocess.check_output(dfcommand, shell=True);
         except:
             errors = True
+            dyfcommand = 'diff -y  ' + myout + ' ' + trout
+            os.system(dyfcommand);
             print("--- Failed testcase for ", fname)
             #break
 
