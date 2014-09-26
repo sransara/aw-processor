@@ -6,10 +6,10 @@
 // data path interface
 `include "datapath_cache_if.vh"
 `include "cpu_types_pkg.vh"
-`include "my_types_pkg.vh"
+`include "aww_types_pkg.vh"
 
 module datapath
-import cpu_types_pkg::*, my_types_pkg::*;
+import cpu_types_pkg::*, aww_types_pkg::*;
 (
   input logic CLK, nRST,
   datapath_cache_if.dp dpif
@@ -42,20 +42,12 @@ pipeline_reg PIPER (
   ifid_n, idex_n, exmem_n, memwb_n,
   ifid, idex, exmem, memwb
 );
-//forwarding_unit FU(fuif);
 
 // All about Hzards : TODO
   assign pipe_WEN = dpif.dhit | dpif.ihit;
   assign ifid_WEN = dpif.ihit;
   assign ifid_FLUSH = dpif.dhit | idex.Halt;
 
-// Going forward
-/*
-  assign fuif.idex_rs = idex.rs;
-  assign fuif.idex_rt = idex.rt;
-  assign fuif.exmem_rd = exmem.rd;
-  assign fuif.memwb_rd = memwb.rd;
-*/
 // pipeline stuff
   // IF and D
   assign ifid_n.imemload = dpif.imemload;
@@ -154,11 +146,28 @@ assign immwzeroes = '0;
   assign cuif.funct = instruction.funct;
 
 // EX
+  // forward
+    logic forward_b;
+    word_t forward_a_data, forward_b_data;
+    assign forward_a_data = ((idex.rs == 0) ? idex.rdat1 :
+                              ((exmem.RegWr & (idex.rs == exmem.wsel)) ? exmem.aluout :
+                                ((memwb.RegWr & (idex.rs == memwb.wsel)) ? memwb.aluout :
+                                  idex.rdat1)));
+
+    assign forward_b = (exmem.RegWr & (idex.rt == exmem.wsel) | memwb.RegWr & (idex.rt == memwb.wsel));
+    assign forward_b_data = ((idex.rt == 0) ? idex.rdat2 :
+                              ((exmem.RegWr & (idex.rt == exmem.wsel)) ? exmem.aluout :
+                                ((memwb.RegWr & (idex.rt == memwb.wsel)) ? memwb.aluout :
+                                      idex.rdat2)));
+
+    assign exmem_n.dmemstore = ((exmem.RegWr && (idex.rt == exmem.wsel)) ? exmem.aluout :
+                                  ((memwb.RegWr && (idex.rt == memwb.wsel)) ? memwb.aluout :
+                                    idex.rdat2));
   // alu glue logic
     logic [WORD_W-SHAM_W:0] shamzeroes;
     assign shamzeroes = '0;
 
-    assign aluif.port_a = idex.rdat1;
+    assign aluif.port_a = forward_a_data;
     assign aluif.aluop = idex.aluop;
 
     // alu port_b select
@@ -175,6 +184,9 @@ assign immwzeroes = '0;
           // zero extend
           aluif.port_b = word_t'({ immwzeroes, idex.imm });
         end
+      end
+      else if(forward_b) begin
+        aluif.port_b = forward_b_data;
       end else begin
         aluif.port_b = idex.rdat2;
       end
@@ -187,22 +199,13 @@ assign immwzeroes = '0;
         pc_npc_branch = idex.pc_plus + {{IMM_W-2{idex.imm[IMM_W-1]}}, idex.imm, 2'b0 };
         pc_npc_addr  = { idex.pc_plus[WORD_W-1:WORD_W-4], idex.addr, 2'b0 };
     end
-  // end pc glue
-
-// MEM
-  // datacache
-    assign dpif.dmemaddr = exmem.aluout;
-    assign dpif.dmemstore = exmem.rdat2;
-    assign dpif.dmemWEN = exmem.DataWrite;
-    assign dpif.dmemREN = exmem.DataRead;
-  // pc glue
     always_comb
     begin
-        if((exmem.BrEq & exmem.zero) || (exmem.BrNeq & ~exmem.zero)) begin
+        if((idex.BrEq & aluif.zero) || (idex.BrNeq & ~aluif.zero)) begin
           pcif.npc = pc_npc_branch;
         end
         else if(exmem.Jr) begin
-          pcif.npc = exmem.rdat1;
+          pcif.npc = idex.rdat1;
         end
         else if(exmem.Jump) begin
           pcif.npc = pc_npc_addr;
@@ -212,6 +215,13 @@ assign immwzeroes = '0;
         end
     end
   // end pc glue
+
+// MEM
+  // datacache
+    assign dpif.dmemaddr = exmem.aluout;
+    assign dpif.dmemstore = exmem.dmemstore;
+    assign dpif.dmemWEN = exmem.DataWrite;
+    assign dpif.dmemREN = exmem.DataRead;
 
 // WB
   // datacache

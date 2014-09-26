@@ -1,6 +1,6 @@
-`include "my_types_pkg.vh"
+`include "aww_types_pkg.vh"
 module pipeline_reg
-import my_types_pkg::*;
+import aww_types_pkg::*;
 (
   input logic CLK, nRST, WEN,
   input logic ifid_WEN, ifid_FLUSH,

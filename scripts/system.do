@@ -2,9 +2,12 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate /system_tb/CLK
 add wave -noupdate /system_tb/DUT/CPUCLK
+add wave -noupdate /system_tb/DUT/CPU/DP/exmem.aluout
+add wave -noupdate /system_tb/DUT/CPU/DP/idex.funct
 add wave -noupdate /system_tb/DUT/CPU/DP/memwb.dmemload
 add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/rfif/wdat
 add wave -noupdate /system_tb/DUT/CPU/DP/CU/opcode
+add wave -noupdate /system_tb/DUT/CPU/DP/exmem.dmemstore
 add wave -noupdate /system_tb/DUT/RAM/ramif/ramstate
 add wave -noupdate /system_tb/DUT/CPU/DP/memwb.DataRead
 add wave -noupdate /system_tb/DUT/CPU/DP/exmem.DataWrite
@@ -26,11 +29,11 @@ add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rsel2
 add wave -noupdate /system_tb/DUT/CPU/dcif/imemREN
 add wave -noupdate /system_tb/DUT/CPU/ccif/iwait
 add wave -noupdate /system_tb/DUT/CPU/DP/ifid
-add wave -noupdate /system_tb/DUT/CPU/DP/idex
-add wave -noupdate /system_tb/DUT/CPU/DP/exmem
+add wave -noupdate -childformat {{/system_tb/DUT/CPU/DP/idex.rs -radix unsigned} {/system_tb/DUT/CPU/DP/idex.rt -radix unsigned}} -subitemconfig {/system_tb/DUT/CPU/DP/idex.rs {-radix unsigned} /system_tb/DUT/CPU/DP/idex.rt {-radix unsigned}} /system_tb/DUT/CPU/DP/idex
+add wave -noupdate -expand /system_tb/DUT/CPU/DP/exmem
 add wave -noupdate /system_tb/DUT/CPU/DP/memwb
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {219980 ps} 0}
+WaveRestoreCursors {{Cursor 1} {782277 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -46,4 +49,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {336032 ps}
+WaveRestoreZoom {414756 ps} {1088476 ps}

@@ -22,7 +22,7 @@ errors = False
 testdir = './asmFiles/'
 print("Testing " + sym)
 for fname in os.listdir(testdir):
-    if(runfname and fname != runfname):
+    if(runfname and not fname.startswith(runfname)):
         continue
 
     if(fname.endswith('.asm')):
