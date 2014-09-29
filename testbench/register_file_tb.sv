@@ -16,6 +16,13 @@ module register_file_tb;
   parameter PERIOD = 10;
 
   logic CLK = 0, nRST;
+<<<<<<< HEAD
+=======
+
+  // test vars
+  int v1 = 1;
+  int v2 = 4721;
+  int v3 = 25119;
 
   // clock
   always #(PERIOD/2) CLK++;

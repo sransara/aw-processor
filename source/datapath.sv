@@ -103,9 +103,6 @@ pipeline_reg PIPER (
   assign exmem_n.Halt = idex.Halt;
 
   assign exmem_n.rdat1 = idex.rdat1;
-  assign exmem_n.rdat2 = idex.rdat2;
-
-  assign exmem_n.wsel = idex.RegDst ? idex.rd : (idex.Jal ? 5'd31 : idex.rt);
 
   assign exmem_n.pc_plus = idex.pc_plus;
   // end EX and MEM
@@ -147,27 +144,32 @@ assign immwzeroes = '0;
 
 // EX
   // forward
-    logic forward_b;
+    logic forward_a, forward_b;
     word_t forward_a_data, forward_b_data;
-    assign forward_a_data = ((idex.rs == 0) ? idex.rdat1 :
-                              ((exmem.RegWr & (idex.rs == exmem.wsel)) ? exmem.aluout :
-                                ((memwb.RegWr & (idex.rs == memwb.wsel)) ? memwb.aluout :
-                                  idex.rdat1)));
+    assign forward_a = (idex.rs == 0) |
+                       (exmem.RegWr & (idex.rs == exmem.wsel)) |
+                       (memwb.RegWr & (idex.rs == memwb.wsel)) ;
 
-    assign forward_b = (exmem.RegWr & (idex.rt == exmem.wsel) | memwb.RegWr & (idex.rt == memwb.wsel));
-    assign forward_b_data = ((idex.rt == 0) ? idex.rdat2 :
-                              ((exmem.RegWr & (idex.rt == exmem.wsel)) ? exmem.aluout :
-                                ((memwb.RegWr & (idex.rt == memwb.wsel)) ? memwb.aluout :
-                                      idex.rdat2)));
+    assign forward_b = (idex.rt == 0) |
+                       (exmem.RegWr & (idex.rt == exmem.wsel)) |
+                       (memwb.RegWr & (idex.rt == memwb.wsel)) ;
 
-    assign exmem_n.dmemstore = ((exmem.RegWr && (idex.rt == exmem.wsel)) ? exmem.aluout :
-                                  ((memwb.RegWr && (idex.rt == memwb.wsel)) ? memwb.aluout :
-                                    idex.rdat2));
+    assign forward_a_data = ((exmem.RegWr & (idex.rs == exmem.wsel)) ? exmem.aluout :
+                              ((memwb.RegWr & (idex.rs == memwb.wsel)) ? memwb.aluout : 0));
+
+    assign forward_b_data = ((exmem.RegWr & (idex.rt == exmem.wsel)) ? exmem.aluout :
+                              ((memwb.RegWr & (idex.rt == memwb.wsel)) ? memwb.aluout : 0));
+
+    assign exmem_n.rdat2 = forward_b ? forward_b_data : idex.rdat2;
+
+  // register write selectt
+    assign exmem_n.wsel = idex.RegDst ? idex.rd : (idex.Jal ? 5'd31 : idex.rt);
+
   // alu glue logic
     logic [WORD_W-SHAM_W:0] shamzeroes;
     assign shamzeroes = '0;
 
-    assign aluif.port_a = forward_a_data;
+    assign aluif.port_a = forward_a ? forward_a_data : idex.rdat1;
     assign aluif.aluop = idex.aluop;
 
     // alu port_b select
@@ -198,9 +200,7 @@ assign immwzeroes = '0;
     begin
         pc_npc_branch = idex.pc_plus + {{IMM_W-2{idex.imm[IMM_W-1]}}, idex.imm, 2'b0 };
         pc_npc_addr  = { idex.pc_plus[WORD_W-1:WORD_W-4], idex.addr, 2'b0 };
-    end
-    always_comb
-    begin
+
         if((idex.BrEq & aluif.zero) || (idex.BrNeq & ~aluif.zero)) begin
           pcif.npc = pc_npc_branch;
         end
@@ -219,7 +219,7 @@ assign immwzeroes = '0;
 // MEM
   // datacache
     assign dpif.dmemaddr = exmem.aluout;
-    assign dpif.dmemstore = exmem.dmemstore;
+    assign dpif.dmemstore = exmem.rdat2;
     assign dpif.dmemWEN = exmem.DataWrite;
     assign dpif.dmemREN = exmem.DataRead;
 

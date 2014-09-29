@@ -18,11 +18,11 @@ begin
   end
   else if(rfif.WEN)
   begin
-    register[rfif.wsel] <= rfif.wdat;
+    register[rfif.wsel] <= (rfif.wsel == 0) ? 0 : rfif.wdat;
   end
 end
 
-assign rfif.rdat1 = (rfif.rsel1) == 0 ? 0 : register[rfif.rsel1];
-assign rfif.rdat2 = (rfif.rsel2) == 0 ? 0 : register[rfif.rsel2];
+assign rfif.rdat1 = register[rfif.rsel1];
+assign rfif.rdat2 = register[rfif.rsel2];
 
 endmodule

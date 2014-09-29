@@ -76,9 +76,9 @@ package aww_types_pkg;
     logic Halt;
 
     word_t rdat1;
+    word_t rdat2;
 
     regbits_t wsel; // mux output for wsel
-    word_t dmemstore;
 
     // Revenge of the fallen from IF|ID
     word_t pc_plus;
