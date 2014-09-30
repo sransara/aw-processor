@@ -58,6 +58,7 @@ package aww_types_pkg;
   typedef struct packed {
 
     // from Alu
+    word_t wdat;
     word_t aluout;
     word_t zero;
 
@@ -101,13 +102,21 @@ package aww_types_pkg;
     logic Halt;
 
     // Revenge of the fallen from EX | MEM
-    word_t aluout;
+    word_t wdat;
     regbits_t wsel; // mux output for wsel
 
     // Revenge of the fallen from IF|ID
     word_t pc_plus;
 
   } memwb_t;
+
+  typedef enum logic [2:0] {
+    NO_STALL,
+    IFID_STALL,
+    IDEX_STALL,
+    EXMEM_STALL,
+    FULL_STALL
+  } pipe_stall_t;
 
 endpackage
 `endif //AWW_TYPES_PKG_VH

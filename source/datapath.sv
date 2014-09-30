@@ -18,15 +18,16 @@ import cpu_types_pkg::*, aww_types_pkg::*;
 parameter PC_INIT = 0;
 
 // All the kings horses
-logic pipe_WEN, ifid_WEN, ifid_FLUSH;
+logic ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH;
 ifid_t  ifid, ifid_n;
 idex_t  idex, idex_n;
 exmem_t exmem, exmem_n;
 memwb_t memwb, memwb_n;
 
+hazard_unit_if huif();
 register_file_if rfif();
-decoder_if instruction();
 alu_if aluif();
+decoder_if instruction();
 pc_if pcif();
 control_unit_if cuif();
 
@@ -36,17 +37,14 @@ alu AU(aluif);
 decoder DEC(instruction);
 pc #(.PC_INIT(PC_INIT)) PCU(.CLK(CLK), .nRST(nRST), .pcif(pcif));
 control_unit CU(cuif);
+hazard_unit HUZ(huif);
 pipeline_reg PIPER (
-  CLK, nRST, pipe_WEN,
-  ifid_WEN, ifid_FLUSH,
+  CLK, nRST,
+  huif.pipe_stall,
+  huif.ifid_FLUSH, huif.idex_FLUSH, huif.exmem_FLUSH, huif.memwb_FLUSH,
   ifid_n, idex_n, exmem_n, memwb_n,
   ifid, idex, exmem, memwb
 );
-
-// All about Hzards : TODO
-  assign pipe_WEN = dpif.dhit | dpif.ihit;
-  assign ifid_WEN = dpif.ihit;
-  assign ifid_FLUSH = dpif.dhit | idex.Halt;
 
 // pipeline stuff
   // IF and D
@@ -117,7 +115,7 @@ pipeline_reg PIPER (
   assign memwb_n.ImmToReg = exmem.ImmToReg;
   assign memwb_n.Jal = exmem.Jal;
 
-  assign memwb_n.aluout = exmem.aluout;
+  assign memwb_n.wdat = exmem.wdat;
   assign memwb_n.wsel = exmem.wsel;
   assign memwb_n.Halt = exmem.Halt;
 
@@ -125,12 +123,26 @@ pipeline_reg PIPER (
   // end MEM and WB
 // end pipeline stuff
 
-// general
-logic [IMM_W-1:0] immwzeroes;
-assign immwzeroes = '0;
+// in general
+  logic [IMM_W-1:0] immwzeroes;
+  assign immwzeroes = '0;
+
+
+// all about hazards
+  //assign pipe_WEN = dpif.dhit | dpif.ihit;
+  //assign ifid_WEN = dpif.ihit;
+  //assign ifid_FLUSH = dpif.dhit | idex.Halt;
+  assign huif.dpif_ihit = dpif.ihit;
+  assign huif.dpif_dhit = dpif.dhit;
+  assign huif.idex_Halt = idex.Halt;
+  assign huif.idex_DataRead = idex.DataRead;
+  assign huif.idex_rt = idex.rt;
+  assign huif.ifid_rs = instruction.rs;
+  assign huif.ifid_rt = instruction.rt;
+
+  assign pcif.wen = dpif.ihit & huif.pc_WEN;
 
 // IF
-  assign pcif.wen = dpif.ihit;
   assign dpif.imemaddr = pcif.cpc;
 
 // ID
@@ -146,6 +158,7 @@ assign immwzeroes = '0;
   // forward
     logic forward_a, forward_b;
     word_t forward_a_data, forward_b_data;
+    word_t memwb_wdat;
     assign forward_a = (idex.rs == 0) |
                        (exmem.RegWr & (idex.rs == exmem.wsel)) |
                        (memwb.RegWr & (idex.rs == memwb.wsel)) ;
@@ -154,16 +167,25 @@ assign immwzeroes = '0;
                        (exmem.RegWr & (idex.rt == exmem.wsel)) |
                        (memwb.RegWr & (idex.rt == memwb.wsel)) ;
 
-    assign forward_a_data = ((exmem.RegWr & (idex.rs == exmem.wsel)) ? exmem.aluout :
-                              ((memwb.RegWr & (idex.rs == memwb.wsel)) ? memwb.aluout : 0));
+    assign forward_a_data = ((exmem.RegWr & (idex.rs == exmem.wsel)) ? exmem.wdat :
+                              ((memwb.RegWr & (idex.rs == memwb.wsel)) ? memwb_wdat : 0));
 
-    assign forward_b_data = ((exmem.RegWr & (idex.rt == exmem.wsel)) ? exmem.aluout :
-                              ((memwb.RegWr & (idex.rt == memwb.wsel)) ? memwb.aluout : 0));
+    assign forward_b_data = ((exmem.RegWr & (idex.rt == exmem.wsel)) ? exmem.wdat:
+                              ((memwb.RegWr & (idex.rt == memwb.wsel)) ? memwb_wdat : 0));
 
+  // set signals for exmem_n
     assign exmem_n.rdat2 = forward_b ? forward_b_data : idex.rdat2;
-
-  // register write selectt
     assign exmem_n.wsel = idex.RegDst ? idex.rd : (idex.Jal ? 5'd31 : idex.rt);
+    always_comb
+    begin
+      if(idex.Jal)
+        exmem_n.wdat = pcif.pc_plus;
+      else if(idex.ImmToReg)
+        // Zero padder
+        exmem_n.wdat = word_t'({ idex.imm, immwzeroes});
+      else
+        exmem_n.wdat = aluif.out;
+    end
 
   // alu glue logic
     logic [WORD_W-SHAM_W:0] shamzeroes;
@@ -205,7 +227,7 @@ assign immwzeroes = '0;
           pcif.npc = pc_npc_branch;
         end
         else if(exmem.Jr) begin
-          pcif.npc = idex.rdat1;
+          pcif.npc = forward_a ? forward_a_data : idex.rdat1;
         end
         else if(exmem.Jump) begin
           pcif.npc = pc_npc_addr;
@@ -230,18 +252,14 @@ assign immwzeroes = '0;
   // reg file glue logic - writes
     assign rfif.wsel = memwb.wsel;
     assign rfif.WEN = memwb.RegWr;
+    assign rfif.wdat = memwb_wdat;
     // wdat selector MUX
     always_comb
     begin
-      if(memwb.Jal)
-        rfif.wdat = memwb.pc_plus;
-      else if(memwb.ImmToReg)
-        // Zero padder
-        rfif.wdat = word_t'({ memwb.imm, immwzeroes});
-      else if(memwb.DataRead)
-        rfif.wdat = memwb.dmemload;
+      if(memwb.DataRead)
+        memwb_wdat = memwb.dmemload;
       else
-        rfif.wdat = memwb.aluout;
+        memwb_wdat = memwb.wdat;
     end
 
 endmodule
