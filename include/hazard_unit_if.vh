@@ -16,10 +16,12 @@ interface hazard_unit_if;
   logic pc_WEN;
   pipe_stall_t pipe_stall;
   logic ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH;
+  logic [0:3] flushes;
 
   modport hi (
     input idex_DataRead, idex_rt, ifid_rs, ifid_rt,
     input dpif_ihit, dpif_dhit, idex_Halt,
+    input flushes,
     output pc_WEN,
     output pipe_stall,
     output ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH

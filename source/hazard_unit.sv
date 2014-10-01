@@ -9,7 +9,10 @@ module hazard_unit (
   import cpu_types_pkg::*;
   import aww_types_pkg::*;
 
-  assign huif.ifid_FLUSH = huif.dpif_dhit | huif.idex_Halt;
+  assign huif.ifid_FLUSH = huif.flushes[0] | huif.dpif_dhit | huif.idex_Halt;
+  assign huif.idex_FLUSH = huif.flushes[1];
+  assign huif.exmem_FLUSH = huif.flushes[2];
+  assign huif.memwb_FLUSH = huif.flushes[3];
   assign huif.pc_WEN = huif.pipe_stall === NO_STALL;
 
   always_comb

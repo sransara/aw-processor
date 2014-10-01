@@ -4,6 +4,14 @@ import os
 import subprocess
 import sys
 
+# Colors
+HEADERC = '\033[95m'
+OKBLUEC = '\033[94m'
+OKGREENC = '\033[92m'
+WARNINGC = '\033[93m'
+FAILC = '\033[91m'
+ENDC = '\033[0m'
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--file', help='.asm file to test')
 parser.add_argument('-s', '--syn', help='sim or syn', action='store_true')
@@ -36,7 +44,7 @@ for fname in os.listdir(testdir):
         excommand = 'make system.sim ' + std
         dfcommand = 'diff -b -B ' + myout + ' ' + trout
 
-        print("Testing file:", fname)
+        print("-- Testing file:", fname)
         print(recommand)
         reout = os.system(recommand)
         if(sym == 'syn'):
@@ -47,11 +55,12 @@ for fname in os.listdir(testdir):
         try:
             print(dfcommand)
             dfout = subprocess.check_output(dfcommand, shell=True);
+            print("[" + OKGREENC + "PASSED" + ENDC + "] testcase for ", fname)
         except:
             errors = True
             dyfcommand = 'diff -y  ' + myout + ' ' + trout
             os.system(dyfcommand);
-            print("--- Failed testcase for ", fname)
+            print("[" + FAILEDC + "FAILED" + ENDC + "] testcase for ", fname)
             #break
 
 if(errors): exit(1)

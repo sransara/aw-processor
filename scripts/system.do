@@ -18,9 +18,9 @@ add wave -noupdate /system_tb/DUT/CPU/DP/dpif/dhit
 add wave -noupdate /system_tb/DUT/CPU/dcif/ihit
 add wave -noupdate /system_tb/nRST
 add wave -noupdate /system_tb/DUT/CPU/halt
-add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/pcif/cpc
-add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/pcif/npc
-add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/pcif/pc_plus
+add wave -noupdate -radix hexadecimal /system_tb/DUT/CPU/DP/pcif/cpc
+add wave -noupdate -radix hexadecimal /system_tb/DUT/CPU/DP/pcif/npc
+add wave -noupdate -radix hexadecimal /system_tb/DUT/CPU/DP/pcif/pc_plus
 add wave -noupdate /system_tb/DUT/CPU/DP/pcif/wen
 add wave -noupdate -radix decimal /system_tb/DUT/CPU/DP/rfif/rdat1
 add wave -noupdate /system_tb/DUT/CPU/DP/rfif/rdat2
@@ -55,12 +55,13 @@ add wave -noupdate -group ifid_instruction /system_tb/DUT/CPU/DP/instruction/sha
 add wave -noupdate -childformat {{/system_tb/DUT/CPU/DP/idex.rs -radix unsigned -childformat {{{[4]} -radix unsigned} {{[3]} -radix unsigned} {{[2]} -radix unsigned} {{[1]} -radix unsigned} {{[0]} -radix unsigned}}} {/system_tb/DUT/CPU/DP/idex.rt -radix unsigned}} -subitemconfig {/system_tb/DUT/CPU/DP/idex.rs {-height 17 -radix unsigned -childformat {{{[4]} -radix unsigned} {{[3]} -radix unsigned} {{[2]} -radix unsigned} {{[1]} -radix unsigned} {{[0]} -radix unsigned}}} {/system_tb/DUT/CPU/DP/idex.rs[4]} {-radix unsigned} {/system_tb/DUT/CPU/DP/idex.rs[3]} {-radix unsigned} {/system_tb/DUT/CPU/DP/idex.rs[2]} {-radix unsigned} {/system_tb/DUT/CPU/DP/idex.rs[1]} {-radix unsigned} {/system_tb/DUT/CPU/DP/idex.rs[0]} {-radix unsigned} /system_tb/DUT/CPU/DP/idex.rt {-height 17 -radix unsigned}} /system_tb/DUT/CPU/DP/idex
 add wave -noupdate /system_tb/DUT/CPU/DP/exmem
 add wave -noupdate /system_tb/DUT/CPU/DP/memwb
-add wave -noupdate /system_tb/DUT/CPU/DP/RFU/register
+add wave -noupdate {/system_tb/DUT/CPU/DP/RFU/register[31]}
+add wave -noupdate -expand /system_tb/DUT/CPU/DP/RFU/register
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {340000 ps} 0}
+WaveRestoreCursors {{Cursor 1} {449829 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
-configure wave -valuecolwidth 100
+configure wave -valuecolwidth 39
 configure wave -justifyvalue left
 configure wave -signalnamewidth 1
 configure wave -snapdistance 10
@@ -73,4 +74,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {3140 ps} {676860 ps}
+WaveRestoreZoom {286192 ps} {643935 ps}
