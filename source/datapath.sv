@@ -18,7 +18,6 @@ import cpu_types_pkg::*, aww_types_pkg::*;
 parameter PC_INIT = 0;
 
 // All the kings horses
-logic ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH;
 ifid_t  ifid, ifid_n;
 idex_t  idex, idex_n;
 exmem_t exmem, exmem_n;
@@ -140,6 +139,7 @@ pipeline_reg PIPER (
   assign huif.idex_rt = idex.rt;
   assign huif.ifid_rs = instruction.rs;
   assign huif.ifid_rt = instruction.rt;
+  assign huif.exmem_Data = exmem.DataRead | exmem.DataWrite;
 
   assign pcif.wen = dpif.ihit &  huif.pc_WEN;
 
@@ -213,10 +213,17 @@ pipeline_reg PIPER (
         pc_npc_branch = idex.pc_plus + {{IMM_W-2{idex.imm[IMM_W-1]}}, idex.imm, 2'b0 };
         pc_npc_addr  = { ifid.pc_plus[WORD_W-1:WORD_W-4], instruction.addr, 2'b0 };
         huif.flushes = 4'b0000;
+        huif.BranchTaken = 0;
 
         if((idex.BrEq & aluif.zero) || (idex.BrNeq & ~aluif.zero)) begin
           pcif.npc = pc_npc_branch;
-          huif.flushes = 4'b1100;
+          if(exmem.DataRead | exmem.DataWrite) begin
+            huif.flushes = 4'b1000;
+          end
+          else begin
+            huif.flushes = 4'b1100;
+          end
+          huif.BranchTaken = 1;
         end
         else if(idex.Jr) begin
           pcif.npc = forward_a ? forward_a_data : idex.rdat1;
@@ -224,6 +231,7 @@ pipeline_reg PIPER (
         end
         else if(cuif.Jump) begin
           pcif.npc = pc_npc_addr;
+          huif.flushes = 4'b1000;
         end
         else begin
           pcif.npc = pcif.pc_plus;
