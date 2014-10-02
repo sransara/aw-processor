@@ -22,7 +22,7 @@ module hazard_unit (
     begin
       huif.pipe_stall = IDEX_STALL;
     end
-    else if (huif.BranchTaken & huif.exmem_Data) begin
+    else if (huif.BranchTaken & huif.exmem_DataRequest) begin
       huif.pipe_stall = EXMEM_STALL;
     end
     else if(huif.dpif_dhit | huif.dpif_ihit) begin
