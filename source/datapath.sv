@@ -213,11 +213,10 @@ pipeline_reg PIPER (
         pc_npc_branch = idex.pc_plus + {{IMM_W-2{idex.imm[IMM_W-1]}}, idex.imm, 2'b0 };
         pc_npc_addr  = { ifid.pc_plus[WORD_W-1:WORD_W-4], instruction.addr, 2'b0 };
         huif.flushes = 4'b0000;
-        //huif.npc_change = 1;
+        huif.npc_change = 1;
 
         if((idex.BrEq & aluif.zero) || (idex.BrNeq & ~aluif.zero)) begin
           pcif.npc = pc_npc_branch;
-          huif.npc_change = 1;
           if(exmem.DataRead | exmem.DataWrite) begin
             huif.flushes = 4'b1000;
           end
@@ -226,7 +225,6 @@ pipeline_reg PIPER (
           end
         end
         else if(idex.Jr) begin
-          huif.npc_change = 1;
           pcif.npc = forward_a ? forward_a_data : idex.rdat1;
           if(exmem.DataRead | exmem.DataWrite) begin
             huif.flushes = 4'b1000;
@@ -236,7 +234,6 @@ pipeline_reg PIPER (
           end
         end
         else if(cuif.Jump) begin
-          huif.npc_change = 1;
           pcif.npc = pc_npc_addr;
           if(~(exmem.DataRead | exmem.DataWrite)) begin
             huif.flushes = 4'b1000;
