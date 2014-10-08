@@ -25,24 +25,77 @@ always_ff @(posedge CLK, negedge nRST) begin
   else begin
     if(pipe_stall == IFID_STALL) begin
       ifid <= ifid_t'(0);
-      idex <= idex_n;
-      exmem <= exmem_n;
-      memwb <= memwb_n;
+      if(idex_FLUSH) begin
+        idex <= idex_t'(0);
+      end
+      else begin
+        idex <= idex_n;
+      end
+      if (exmem_FLUSH) begin
+        exmem <= exmem_t'(0);
+      end
+      else begin
+        exmem <= exmem_n;
+      end
+      if (memwb_FLUSH) begin
+        memwb <= memwb_t'(0);
+      end
+      else begin
+        memwb <= memwb_n;
+      end
     end
     else if (pipe_stall == IDEX_STALL) begin
       idex <= idex_t'(0);
-      exmem <= exmem_n;
-      memwb <= memwb_n;
+      if (exmem_FLUSH) begin
+        exmem <= exmem_t'(0);
+      end
+      else begin
+        exmem <= exmem_n;
+      end
+      if (memwb_FLUSH) begin
+        memwb <= memwb_t'(0);
+      end
+      else begin
+        memwb <= memwb_n;
+      end
     end
     else if (pipe_stall == EXMEM_STALL) begin
       exmem <= exmem_t'(0);
-      memwb <= memwb_n;
+      if (memwb_FLUSH) begin
+        memwb <= memwb_t'(0);
+      end
+      else begin
+        memwb <= memwb_n;
+      end
     end
     else if(pipe_stall == NO_STALL) begin
-      ifid <= ifid_n;
-      idex <= idex_n;
-      exmem <= exmem_n;
-      memwb <= memwb_n;
+      if(ifid_FLUSH) begin
+        ifid <= ifid_t'(0);
+      end
+      else begin
+        ifid <= ifid_n;
+      end
+
+      if(idex_FLUSH) begin
+        idex <= idex_t'(0);
+      end
+      else begin
+        idex <= idex_n;
+      end
+
+      if (exmem_FLUSH) begin
+        exmem <= exmem_t'(0);
+      end
+      else begin
+        exmem <= exmem_n;
+      end
+
+      if (memwb_FLUSH) begin
+        memwb <= memwb_t'(0);
+      end
+      else begin
+        memwb <= memwb_n;
+      end
     end
     else begin // FULL_STALL aka WEN = 0
       ifid <= ifid;
@@ -51,18 +104,6 @@ always_ff @(posedge CLK, negedge nRST) begin
       memwb <= memwb;
     end
 
-    if(ifid_FLUSH) begin
-      ifid <= ifid_t'(0);
-    end
-    if(idex_FLUSH) begin
-      idex <= idex_t'(0);
-    end
-    if (exmem_FLUSH) begin
-      exmem <= exmem_t'(0);
-    end
-    if (memwb_FLUSH) begin
-      memwb <= memwb_t'(0);
-    end
   end
 
 end

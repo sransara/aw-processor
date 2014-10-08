@@ -58,7 +58,6 @@ package aww_types_pkg;
   typedef struct packed {
 
     // from Alu
-    word_t wdat;
     word_t aluout;
     word_t zero;
 

@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--file', help='.asm file to test')
 parser.add_argument('-s', '--syn', help='sim or syn', action='store_true')
 parser.add_argument('-v', '--verbose', help='print all kinds of output', action='store_true')
+parser.add_argument('-d', '--differences', help='print differences', action='store_true')
 
 args = parser.parse_args()
 sym = 'syn' if args.syn else 'sim' # default to sim, set to syn
@@ -58,9 +59,10 @@ for fname in os.listdir(testdir):
             print("[" + OKGREENC + "PASSED" + ENDC + "] testcase for ", fname)
         except:
             errors = True
-            dyfcommand = 'diff -y  ' + myout + ' ' + trout
-            os.system(dyfcommand);
-            print("[" + FAILEDC + "FAILED" + ENDC + "] testcase for ", fname)
+            if args.differences:
+              dyfcommand = 'diff -y  ' + myout + ' ' + trout
+              os.system(dyfcommand);
+            print("[" + FAILC + "FAILED" + ENDC + "] testcase for ", fname)
             #break
 
 if(errors): exit(1)
