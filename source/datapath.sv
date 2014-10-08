@@ -139,7 +139,7 @@ pipeline_reg PIPER (
   assign huif.idex_rt = idex.rt;
   assign huif.ifid_rs = instruction.rs;
   assign huif.ifid_rt = instruction.rt;
-  assign huif.exmem_DataRequest = exmem.DataRead | exmem.DataWrite;
+  assign huif.exmem_datarequest = exmem.DataRead | exmem.DataWrite;
 
   assign pcif.wen = dpif.ihit & huif.pc_WEN;
 

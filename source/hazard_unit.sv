@@ -28,7 +28,7 @@ module hazard_unit (
     else if(huif.dpif_ihit) begin
       huif.pipe_stall = NO_STALL;
     end
-    else if (huif.npc_change & huif.exmem_DataRequest) begin
+    else if (huif.npc_change & huif.exmem_datarequest) begin
       huif.pipe_stall = EXMEM_STALL;
     end
   end

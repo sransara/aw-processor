@@ -17,13 +17,13 @@ interface hazard_unit_if;
   pipe_stall_t pipe_stall;
   logic ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH;
   logic [0:3] flushes;
-  logic npc_change, exmem_DataRequest;
+  logic npc_change, exmem_datarequest;
 
   modport hi (
     input idex_DataRead, idex_rt, ifid_rs, ifid_rt,
     input dpif_ihit, dpif_dhit, idex_Halt,
     input flushes,
-    input npc_change, exmem_DataRequest,
+    input npc_change, exmem_datarequest,
     output pc_WEN,
     output pipe_stall,
     output ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH
