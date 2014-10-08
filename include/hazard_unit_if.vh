@@ -13,20 +13,21 @@ interface hazard_unit_if;
   logic idex_DataRead;
   regbits_t idex_rt, ifid_rs, ifid_rt;
   logic dpif_ihit, dpif_dhit, idex_Halt;
-  logic pc_WEN;
-  pipe_stall_t pipe_stall;
+  pipe_stall_t npipe_stall;
   logic ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH;
   logic [0:3] flushes;
-  logic npc_change, exmem_datarequest;
+  logic exmem_datarequest;
+  logic npc_change, pc_WEN;
 
   modport hi (
     input idex_DataRead, idex_rt, ifid_rs, ifid_rt,
     input dpif_ihit, dpif_dhit, idex_Halt,
     input flushes,
-    input npc_change, exmem_datarequest,
-    output pc_WEN,
-    output pipe_stall,
-    output ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH
+    input npc_change,
+    input exmem_datarequest,
+    output npipe_stall,
+    output ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH,
+    output pc_WEN
   );
 
 endinterface

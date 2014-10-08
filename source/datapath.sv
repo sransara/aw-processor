@@ -40,7 +40,7 @@ control_unit CU(cuif);
 hazard_unit HUZ(huif);
 pipeline_reg PIPER (
   CLK, nRST,
-  huif.pipe_stall,
+  huif.npipe_stall,
   huif.ifid_FLUSH, huif.idex_FLUSH, huif.exmem_FLUSH, huif.memwb_FLUSH,
   ifid_n, idex_n, exmem_n, memwb_n,
   ifid, idex, exmem, memwb
@@ -141,7 +141,7 @@ pipeline_reg PIPER (
   assign huif.ifid_rt = instruction.rt;
   assign huif.exmem_datarequest = exmem.DataRead | exmem.DataWrite;
 
-  assign pcif.wen = dpif.ihit & huif.pc_WEN;
+  assign pcif.WEN = huif.pc_WEN;
 
 // IF
   assign dpif.imemaddr = pcif.cpc;
@@ -217,27 +217,15 @@ pipeline_reg PIPER (
 
         if((idex.BrEq & aluif.zero) || (idex.BrNeq & ~aluif.zero)) begin
           pcif.npc = pc_npc_branch;
-          if(exmem.DataRead | exmem.DataWrite) begin
-            huif.flushes = 4'b1000;
-          end
-          else begin
-            huif.flushes = 4'b1100;
-          end
+          huif.flushes = 4'b1100;
         end
         else if(idex.Jr) begin
           pcif.npc = forward_a ? forward_a_data : idex.rdat1;
-          if(exmem.DataRead | exmem.DataWrite) begin
-            huif.flushes = 4'b1000;
-          end
-          else begin
-            huif.flushes = 4'b1100;
-          end
+          huif.flushes = 4'b1100;
         end
         else if(cuif.Jump) begin
           pcif.npc = pc_npc_addr;
-          if(~(exmem.DataRead | exmem.DataWrite)) begin
-            huif.flushes = 4'b1000;
-          end
+          huif.flushes = 4'b1000;
         end
         else begin
           pcif.npc = pcif.pc_plus;

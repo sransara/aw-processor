@@ -17,8 +17,7 @@ begin
   begin
     pcif.cpc <= PC_INIT;
   end
-  else if(pcif.wen)
-  begin
+  else if(pcif.WEN) begin
     pcif.cpc <= pcif.npc;
   end
 end

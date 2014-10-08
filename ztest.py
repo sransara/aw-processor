@@ -56,13 +56,13 @@ for fname in os.listdir(testdir):
         try:
             print(dfcommand)
             dfout = subprocess.check_output(dfcommand, shell=True);
-            print("[" + OKGREENC + "PASSED" + ENDC + "] testcase for ", fname)
+            print("[" + OKGREENC + "PASSED" + ENDC + "]", fname)
         except:
             errors = True
             if args.differences:
               dyfcommand = 'diff -y  ' + myout + ' ' + trout
               os.system(dyfcommand);
-            print("[" + FAILC + "FAILED" + ENDC + "] testcase for ", fname)
+            print("[" + FAILC + "FAILED" + ENDC + "]", fname)
             #break
 
 if(errors): exit(1)
