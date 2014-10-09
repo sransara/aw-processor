@@ -46,6 +46,8 @@ pipeline_reg PIPER (
   ifid, idex, exmem, memwb
 );
 
+// branch_predictor BP ( .CLK(CLK), .nRST(nRST), .branch_taken(branch_taken), .target_addr(target_addr), .current_addr(current_addr), .
+
 // pipeline stuff
   // IF and D
   assign ifid_n.imemload = dpif.imemload;
