@@ -131,9 +131,6 @@ pipeline_reg PIPER (
 
 
 // all about hazards
-  //assign pipe_WEN = dpif.dhit | dpif.ihit;
-  //assign ifid_WEN = dpif.ihit;
-  //assign ifid_FLUSH = dpif.dhit | idex.Halt;
   assign huif.dpif_ihit = dpif.ihit;
   assign huif.dpif_dhit = dpif.dhit;
   assign huif.idex_Halt = idex.Halt;
