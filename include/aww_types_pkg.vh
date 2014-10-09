@@ -59,7 +59,6 @@ package aww_types_pkg;
 
     // from Alu
     word_t aluout;
-    word_t zero;
 
     // Revenge of the fallen from ID | EX
     logic [IMM_W-1:0] imm;
@@ -68,14 +67,9 @@ package aww_types_pkg;
     logic DataRead;
     logic DataWrite;
     logic ImmToReg;
-    logic BrEq;
-    logic BrNeq;
-    logic Jump;
-    logic Jr;
     logic Jal;
     logic Halt;
 
-    word_t rdat1;
     word_t rdat2;
 
     regbits_t wsel; // mux output for wsel
@@ -92,12 +86,8 @@ package aww_types_pkg;
     word_t dmemload;
 
     // Revenge of the fallen from ID | EX
-    logic [IMM_W-1:0] imm;
-
     logic RegWr;
     logic DataRead;
-    logic ImmToReg;
-    logic Jal;
     logic Halt;
 
     // Revenge of the fallen from EX | MEM

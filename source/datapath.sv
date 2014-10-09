@@ -46,8 +46,6 @@ pipeline_reg PIPER (
   ifid, idex, exmem, memwb
 );
 
-// branch_predictor BP ( .CLK(CLK), .nRST(nRST), .branch_taken(branch_taken), .target_addr(target_addr), .current_addr(current_addr), .
-
 // pipeline stuff
   // IF and D
   assign ifid_n.imemload = dpif.imemload;
@@ -87,7 +85,6 @@ pipeline_reg PIPER (
 
   // EX and MEM
   assign exmem_n.aluout = aluif.out;
-  assign exmem_n.zero = aluif.zero;
 
   assign exmem_n.imm = idex.imm;
 
@@ -95,14 +92,8 @@ pipeline_reg PIPER (
   assign exmem_n.DataRead = idex.DataRead;
   assign exmem_n.DataWrite = idex.DataWrite;
   assign exmem_n.ImmToReg = idex.ImmToReg;
-  assign exmem_n.BrEq = idex.BrEq;
-  assign exmem_n.BrNeq = idex.BrNeq;
-  assign exmem_n.Jump = idex.Jump;
-  assign exmem_n.Jr = idex.Jr;
   assign exmem_n.Jal = idex.Jal;
   assign exmem_n.Halt = idex.Halt;
-
-  assign exmem_n.rdat1 = idex.rdat1;
 
   assign exmem_n.pc_plus = idex.pc_plus;
   // end EX and MEM
@@ -110,12 +101,8 @@ pipeline_reg PIPER (
   // MEM and WB
   assign memwb_n.dmemload = dpif.dmemload;
 
-  assign memwb_n.imm = exmem.imm;
-
   assign memwb_n.RegWr = exmem.RegWr;
   assign memwb_n.DataRead = exmem.DataRead;
-  assign memwb_n.ImmToReg = exmem.ImmToReg;
-  assign memwb_n.Jal = exmem.Jal;
 
   assign memwb_n.wdat = exmem_wdat;
   assign memwb_n.wsel = exmem.wsel;
