@@ -86,7 +86,7 @@ for fname in os.listdir(testdir):
             print(p)
             #break
 
-print("--- Final report")
+print("\n--- Final report")
 if args.syn:
   print("- Tested make.syn")
 elif args.synth:
