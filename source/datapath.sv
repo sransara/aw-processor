@@ -41,7 +41,7 @@ hazard_unit HUZ(huif);
 pipeline_reg PIPER (
   CLK, nRST,
   huif.npipe_stall,
-  huif.ifid_FLUSH, huif.idex_FLUSH, huif.exmem_FLUSH, huif.memwb_FLUSH,
+  huif.ifid_FLUSH, huif.idex_FLUSH,
   ifid_n, idex_n, exmem_n, memwb_n,
   ifid, idex, exmem, memwb
 );

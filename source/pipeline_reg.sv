@@ -4,7 +4,7 @@ import aww_types_pkg::*;
 (
   input logic CLK, nRST,
   input pipe_stall_t pipe_stall,
-  input logic ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH,
+  input logic ifid_FLUSH, idex_FLUSH,
   input ifid_t ifid_n,
   input idex_t idex_n,
   input exmem_t exmem_n,
@@ -31,33 +31,13 @@ always_ff @(posedge CLK, negedge nRST) begin
       else begin
         idex <= idex_n;
       end
-      if (exmem_FLUSH) begin
-        exmem <= exmem_t'(0);
-      end
-      else begin
-        exmem <= exmem_n;
-      end
-      if (memwb_FLUSH) begin
-        memwb <= memwb_t'(0);
-      end
-      else begin
-        memwb <= memwb_n;
-      end
+      exmem <= exmem_n;
+      memwb <= memwb_n;
     end
     else if (pipe_stall == IDEX_STALL) begin
       idex <= idex_t'(0);
-      if (exmem_FLUSH) begin
-        exmem <= exmem_t'(0);
-      end
-      else begin
-        exmem <= exmem_n;
-      end
-      if (memwb_FLUSH) begin
-        memwb <= memwb_t'(0);
-      end
-      else begin
-        memwb <= memwb_n;
-      end
+      exmem <= exmem_n;
+      memwb <= memwb_n;
     end
     else if(pipe_stall == NO_STALL) begin
       if(ifid_FLUSH) begin
@@ -73,20 +53,8 @@ always_ff @(posedge CLK, negedge nRST) begin
       else begin
         idex <= idex_n;
       end
-
-      if (exmem_FLUSH) begin
-        exmem <= exmem_t'(0);
-      end
-      else begin
-        exmem <= exmem_n;
-      end
-
-      if (memwb_FLUSH) begin
-        memwb <= memwb_t'(0);
-      end
-      else begin
-        memwb <= memwb_n;
-      end
+      exmem <= exmem_n;
+      memwb <= memwb_n;
     end
     else begin // FULL_STALL aka WEN = 0
       ifid <= ifid;
