@@ -107,7 +107,6 @@ package aww_types_pkg;
     NO_STALL,
     IFID_STALL,
     IDEX_STALL,
-    EXMEM_STALL,
     FULL_STALL
   } pipe_stall_t;
 

@@ -59,15 +59,6 @@ always_ff @(posedge CLK, negedge nRST) begin
         memwb <= memwb_n;
       end
     end
-    else if (pipe_stall == EXMEM_STALL) begin
-      exmem <= exmem_t'(0);
-      if (memwb_FLUSH) begin
-        memwb <= memwb_t'(0);
-      end
-      else begin
-        memwb <= memwb_n;
-      end
-    end
     else if(pipe_stall == NO_STALL) begin
       if(ifid_FLUSH) begin
         ifid <= ifid_t'(0);
