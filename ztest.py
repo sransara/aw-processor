@@ -28,6 +28,7 @@ elif args.synth:
 
 runfname = args.file if args.file else ''
 
+final_report = []
 errors = False
 testdir = './asmFiles/'
 print("Testing " + sym)
@@ -65,13 +66,19 @@ for fname in os.listdir(testdir):
         try:
             print(dfcommand)
             dfout = subprocess.check_output(dfcommand, shell=True);
-            print("[" + OKGREENC + "PASSED" + ENDC + "]", fname)
+            p = "[" + OKGREENC + "PASSED" + ENDC + "] " + fname
+            final_report.append(p);
+            print(p)
         except:
             errors = True
             if args.differences:
               dyfcommand = 'diff -y  ' + myout + ' ' + trout
               os.system(dyfcommand);
-            print("[" + FAILC + "FAILED" + ENDC + "]", fname)
+            p = "[" + FAILC + "FAILED" + ENDC + "] " + fname
+            final_report.append(p);
+            print(p)
             #break
 
-if(errors): exit(1)
+print("Final report")
+for p in final_report:
+  print(p)
