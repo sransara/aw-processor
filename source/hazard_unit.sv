@@ -11,8 +11,6 @@ module hazard_unit (
 
   assign huif.ifid_FLUSH = huif.flushes[0] | huif.idex_Halt;
   assign huif.idex_FLUSH = huif.flushes[1];
-  assign huif.exmem_FLUSH = huif.flushes[2];
-  assign huif.memwb_FLUSH = huif.flushes[3];
   assign huif.pc_WEN = huif.npc_change | (huif.npipe_stall === NO_STALL);
 
   always_comb

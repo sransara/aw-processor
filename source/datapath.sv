@@ -199,16 +199,16 @@ pipeline_reg PIPER (
     begin
         pc_npc_branch = idex.pc_plus + {{IMM_W-2{idex.imm[IMM_W-1]}}, idex.imm, 2'b0 };
         pc_npc_addr  = { pcif.pc_plus[WORD_W-1:WORD_W-4], jtype.addr, 2'b0 };
-        huif.flushes = 4'b0000;
+        huif.flushes = 2'b00;
         huif.npc_change = 1;
 
         if((idex.BrEq & equals) || (idex.BrNeq & ~equals)) begin
           pcif.npc = pc_npc_branch;
-          huif.flushes = 4'b1100;
+          huif.flushes = 2'b11;
         end
         else if(idex.Jr) begin
           pcif.npc = forward_a_data;
-          huif.flushes = 4'b1100;
+          huif.flushes = 2'b11;
         end
         else if(jtype.opcode === J || jtype.opcode === JAL) begin
           pcif.npc = pc_npc_addr;
