@@ -15,22 +15,24 @@ ENDC = '\033[0m'
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--file', help='.asm file to test')
 parser.add_argument('-s', '--syn', help='sim or syn', action='store_true')
+parser.add_argument('-n', '--synth', help='synth')
 parser.add_argument('-v', '--verbose', help='print all kinds of output', action='store_true')
 parser.add_argument('-d', '--differences', help='print differences', action='store_true')
 
 args = parser.parse_args()
-sym = 'syn' if args.syn else 'sim' # default to sim, set to syn
-runfname = args.file if args.file else ''
-std = '' if args.verbose else ' > /dev/null'
+sym = 'sim'
+if args.syn:
+  sym = 'syn' # default to sim, set to syn
+elif args.synth:
+  sym = 'synth'
 
-if(sym == 'sim'):
-  print("Warning: Running sim on synthesized without cleaning will give unintended errors")
-  input()
+runfname = args.file if args.file else ''
 
 errors = False
 testdir = './asmFiles/'
 print("Testing " + sym)
 for fname in os.listdir(testdir):
+    std = '' if args.verbose else ' > /dev/null'
     if(runfname and not fname.startswith(runfname)):
         continue
 
@@ -39,20 +41,27 @@ for fname in os.listdir(testdir):
         trout = 'memsim.hex'
         myout = 'memcpu.hex'
 
+        print("-- Testing file:", fname)
         recommand = 'asm asmFiles/' + fname + '; sim > /dev/null;'
+        reout = os.system(recommand)
+        print(recommand)
+
+        sycommand = ''
         if(sym == 'syn'):
           sycommand = 'make system.syn ' + std
-        excommand = 'make system.sim ' + std
-        dfcommand = 'diff -b -B ' + myout + ' ' + trout
+        elif(args.synth):
+          sycommand = 'synthesize -t -f '+ args.synth +' system ' + std
+          std = '' # hacky way to get make (the next cmd) to print to stdout
 
-        print("-- Testing file:", fname)
-        print(recommand)
-        reout = os.system(recommand)
-        if(sym == 'syn'):
+        if(sycommand):
           print (sycommand)
           syout = os.system(sycommand)
+
+        excommand = 'make system.sim ' + std
+        dfcommand = 'diff -b -B ' + myout + ' ' + trout
         print(excommand)
         exout = os.system(excommand);
+
         try:
             print(dfcommand)
             dfout = subprocess.check_output(dfcommand, shell=True);

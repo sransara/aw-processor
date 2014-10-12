@@ -18,6 +18,11 @@ package aww_types_pkg;
 
   // ID | EX
   typedef struct packed {
+    logic forward_exmem_a;
+    logic forward_memwb_a;
+
+    logic forward_exmem_b;
+    logic forward_memwb_b;
 
     // from idecoded.(Rs | Rt)
     regbits_t rs;
@@ -88,7 +93,6 @@ package aww_types_pkg;
     // Revenge of the fallen from ID | EX
     logic RegWr;
     logic DataRead;
-    logic Halt;
 
     // Revenge of the fallen from EX | MEM
     word_t wdat;

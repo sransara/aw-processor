@@ -51,10 +51,6 @@ assign cuif.Halt = (opcode === HALT);
       SLTI:   cuif.aluop = ALU_SLT;
       SLTIU:  cuif.aluop = ALU_SLTU;
       XORI:   cuif.aluop = ALU_XOR;
-      BEQ:    cuif.aluop = ALU_SUB;
-      BNE:    cuif.aluop = ALU_SUB;
-      SW:     cuif.aluop = ALU_ADD;
-      LW:     cuif.aluop = ALU_ADD;
     endcase
   end
   // alu func_t to aluop_t
@@ -64,10 +60,8 @@ assign cuif.Halt = (opcode === HALT);
     casez (funct)
       SLL:  alu_ftop = ALU_SLL;
       SRL:  alu_ftop = ALU_SRL;
-      ADD:  alu_ftop = ALU_ADD;
-      ADDU: alu_ftop = ALU_ADD;
-      SUB:  alu_ftop = ALU_SUB;
-      SUBU: alu_ftop = ALU_SUB;
+      ADD, ADDU:  alu_ftop = ALU_ADD;
+      SUB, SUBU:  alu_ftop = ALU_SUB;
       AND:  alu_ftop = ALU_AND;
       OR:   alu_ftop = ALU_OR;
       XOR:  alu_ftop = ALU_XOR;
