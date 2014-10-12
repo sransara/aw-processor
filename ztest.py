@@ -52,7 +52,7 @@ for fname in os.listdir(testdir):
           sycommand = 'make system.syn ' + std
         elif(args.synth):
           sycommand = 'synthesize -t -f '+ args.synth +' system ' + std
-          std = '' # hacky way to get make (the next cmd) to print to stdout
+          std = '| tee temp_make.log'
 
         if(sycommand):
           print (sycommand)
@@ -66,10 +66,17 @@ for fname in os.listdir(testdir):
         try:
             print(dfcommand)
             dfout = subprocess.check_output(dfcommand, shell=True);
-            p = "[" + OKGREENC + "PASSED" + ENDC + "] " + fname
+            perf = ''
+            if(args.synth):
+              with open("temp_make.log") as search:
+                for line in search:
+                    line = line.rstrip()  # remove '\n' at end of line
+                    if line.startswith("# Halted"):
+                      perf = line
+            p = "[" + OKGREENC + "PASSED" + ENDC + "] " + fname + ' ' + perf
             final_report.append(p);
             print(p)
-        except:
+        except subprocess.CalledProcessError:
             errors = True
             if args.differences:
               dyfcommand = 'diff -y  ' + myout + ' ' + trout
@@ -79,6 +86,15 @@ for fname in os.listdir(testdir):
             print(p)
             #break
 
-print("Final report")
+print("--- Final report")
+if args.syn:
+  print("- Tested make.syn")
+elif args.synth:
+  print("- Tested synth with frequency " + args.synth)
+  os.system('grep --color "[1-9] violated" system.log');
+  os.system("grep -n 'MHz\s*;\s*CPUCLK' ._system/system.sta.rpt | grep --color -P '[0-9]+\.[0-9]+ MHz'");
+else:
+  print("- Tested make.sim")
+
 for p in final_report:
   print(p)

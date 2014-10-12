@@ -89,8 +89,8 @@ pipeline_reg PIPER (
   assign exmem_n.imm = idex.imm;
 
   assign exmem_n.RegWr = idex.RegWr;
-  assign exmem_n.DataRead = idex.DataRead;
-  assign exmem_n.DataWrite = idex.DataWrite;
+  assign exmem_n.DataRead = idex.DataRead & ~exmem.Halt;
+  assign exmem_n.DataWrite = idex.DataWrite & ~exmem.Halt;
   assign exmem_n.ImmToReg = idex.ImmToReg;
   assign exmem_n.Jal = idex.Jal;
   assign exmem_n.Halt = idex.Halt;
@@ -101,6 +101,7 @@ pipeline_reg PIPER (
   // MEM and WB
   assign memwb_n.dmemload = dpif.dmemload;
 
+  assign memwb_n.Halt = exmem.Halt;
   assign memwb_n.RegWr = exmem.RegWr;
   assign memwb_n.DataRead = exmem.DataRead;
 
@@ -239,10 +240,11 @@ pipeline_reg PIPER (
     assign dpif.dmemstore = exmem.rdat2;
     assign dpif.dmemWEN = exmem.DataWrite;
     assign dpif.dmemREN = exmem.DataRead;
-    assign dpif.imemREN = ~exmem.Halt;
-    assign dpif.halt = exmem.Halt;
 
 // WB
+  // datacache
+    assign dpif.imemREN = ~memwb.Halt;
+    assign dpif.halt = memwb.Halt;
   // reg file glue logic - writes
     assign rfif.wsel = memwb.wsel;
     assign rfif.WEN = memwb.RegWr;

@@ -91,6 +91,7 @@ package aww_types_pkg;
     word_t dmemload;
 
     // Revenge of the fallen from ID | EX
+    logic Halt;
     logic RegWr;
     logic DataRead;
 
