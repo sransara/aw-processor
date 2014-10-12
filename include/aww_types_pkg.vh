@@ -12,6 +12,8 @@ package aww_types_pkg;
 
     // from Cache
     word_t imemload;
+    logic bp_hit;
+    word_t cpc;
     word_t pc_plus;
 
   } ifid_t;
@@ -55,6 +57,8 @@ package aww_types_pkg;
     word_t rdat2;
 
     // Revenge of the fallen from IF|ID
+    logic bp_hit;
+    word_t cpc;
     word_t pc_plus;
 
   } idex_t;
