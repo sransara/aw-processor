@@ -92,8 +92,8 @@ if args.syn:
   print("- Tested make.syn")
 elif args.synth:
   print("- Tested synth with frequency " + args.synth)
-  os.system('grep --color "parameter PERIOD" ./testbench/system_tb.sv');
   os.system('grep --color "[1-9] violated" system.log');
+  os.system('grep --color "parameter PERIOD" ./testbench/system_tb.sv');
   os.system("grep -n 'MHz\s*;\s*CPUCLK' ._system/system.sta.rpt | grep --color -P '[0-9]+\.[0-9]+ MHz'");
 else:
   print("- Tested make.sim")
