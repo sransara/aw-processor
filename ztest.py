@@ -17,6 +17,7 @@ parser.add_argument('-f', '--file', help='.asm file to test')
 parser.add_argument('-s', '--syn', help='sim or syn', action='store_true')
 parser.add_argument('-n', '--synth', help='synth')
 parser.add_argument('-v', '--verbose', help='print all kinds of output', action='store_true')
+parser.add_argument('-x', '--noout', help='print no outputs from makes', action='store_true')
 parser.add_argument('-d', '--differences', help='print differences', action='store_true')
 
 args = parser.parse_args()
@@ -52,7 +53,7 @@ for fname in os.listdir(testdir):
           sycommand = 'make system.syn ' + std
         elif(args.synth):
           sycommand = 'synthesize -t -f '+ args.synth +' system ' + std
-          std = '| tee temp_make.log'
+          std = std if args.noout else ''
 
         if(sycommand):
           print (sycommand)
@@ -68,7 +69,7 @@ for fname in os.listdir(testdir):
             dfout = subprocess.check_output(dfcommand, shell=True);
             perf = ''
             if(args.synth):
-              with open("temp_make.log") as search:
+              with open("transcript") as search:
                 for line in search:
                     line = line.rstrip()  # remove '\n' at end of line
                     if line.startswith("# Halted"):
@@ -91,6 +92,7 @@ if args.syn:
   print("- Tested make.syn")
 elif args.synth:
   print("- Tested synth with frequency " + args.synth)
+  os.system('grep --color "parameter PERIOD" ./testbench/system_tb.sv');
   os.system('grep --color "[1-9] violated" system.log');
   os.system("grep -n 'MHz\s*;\s*CPUCLK' ._system/system.sta.rpt | grep --color -P '[0-9]+\.[0-9]+ MHz'");
 else:
@@ -98,3 +100,5 @@ else:
 
 for p in final_report:
   print(p)
+
+sys.exit(0)
