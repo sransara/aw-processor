@@ -44,7 +44,7 @@ for fname in os.listdir(testdir):
         myout = 'memcpu.hex'
 
         print("-- Testing file:", fname)
-        recommand = 'asm asmFiles/' + fname + '; sim > /dev/null;'
+        recommand = 'rm ' + myout + '; asm asmFiles/' + fname + '; sim > /dev/null;'
         reout = os.system(recommand)
         print(recommand)
 
@@ -97,7 +97,6 @@ elif args.synth:
   os.system("grep -n 'MHz\s*;\s*CPUCLK' ._system/system.sta.rpt | grep --color -P '[0-9]+\.[0-9]+ MHz'");
 else:
   print("- Tested make.sim")
-
 for p in final_report:
   print(p)
 

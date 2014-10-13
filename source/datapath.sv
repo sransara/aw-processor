@@ -30,6 +30,7 @@ alu_if aluif();
 decoder_if instruction();
 pc_if pcif();
 control_unit_if cuif();
+branch_predictor_if bpif();
 
 // MAPPINGS
 register_file RFU(.CLK(CLK), .nRST(nRST), .rfif(rfif));
@@ -45,10 +46,13 @@ pipeline_reg PIPER (
   ifid_n, idex_n, exmem_n, memwb_n,
   ifid, idex, exmem, memwb
 );
+branch_predictor BP(CLK, nRST, bpif);
 
 // pipeline stuff
   // IF and D
   assign ifid_n.imemload = dpif.imemload;
+  assign ifid_n.bp_hit = bpif.hit;
+  assign ifid_n.cpc = pcif.cpc;
   assign ifid_n.pc_plus = pcif.pc_plus;
   // end IF and D
 
@@ -80,6 +84,8 @@ pipeline_reg PIPER (
   assign idex_n.rdat1 = rfif.rdat1;
   assign idex_n.rdat2 = rfif.rdat2;
 
+  assign idex_n.bp_hit = ifid.bp_hit;
+  assign idex_n.cpc = ifid.cpc;
   assign idex_n.pc_plus = ifid.pc_plus;
   // end D and EX
 
@@ -195,6 +201,8 @@ pipeline_reg PIPER (
     word_t pc_npc_branch, pc_npc_addr;
     assign jtype = dpif.imemload;
     assign equals = forward_a_data == forward_b_data;
+    assign bpif.hash_sel = pcif.cpc[3:2];
+    assign bpif.tag_sel = pcif.cpc[31:4];
 
     always_comb
     begin
@@ -203,8 +211,31 @@ pipeline_reg PIPER (
         huif.flushes = 2'b00;
         huif.npc_change = 1;
 
-        if((idex.BrEq & equals) || (idex.BrNeq & ~equals)) begin
+        // branch predict
+        bpif.hash_wsel = idex.cpc[3:2];
+        bpif.tag_n = idex.cpc[31:4];
+        bpif.target_n = '0;
+        bpif.active_n = 0;
+        bpif.WEN = 0;
+
+        if(((idex.BrEq & equals) || (idex.BrNeq & ~equals)) & ~idex.bp_hit) begin
+          // branch predict
+          bpif.target_n = pc_npc_branch[31:2];
+          bpif.active_n = 1;
+          bpif.WEN = 1;
+
+          huif.npc_change = 1;
           pcif.npc = pc_npc_branch;
+          huif.flushes = 2'b11;
+        end
+        else if(((idex.BrEq & ~equals) || (idex.BrNeq & equals)) & idex.bp_hit) begin
+          // took the wrong turn at BTB buffer now time to go back
+          // branch predict
+          bpif.active_n = 0;
+          bpif.WEN = 1;
+
+          huif.npc_change = 1;
+          pcif.npc = idex.pc_plus;
           huif.flushes = 2'b11;
         end
         else if(idex.Jr) begin
@@ -216,7 +247,7 @@ pipeline_reg PIPER (
           huif.npc_change = 0;
         end
         else begin
-          pcif.npc = pcif.pc_plus;
+          pcif.npc = bpif.hit ? { bpif.target, 2'b0 } : pcif.pc_plus;
           huif.npc_change = 0;
         end
     end
