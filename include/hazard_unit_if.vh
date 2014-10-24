@@ -18,6 +18,7 @@ interface hazard_unit_if;
   logic [0:1] flushes;
   logic exmem_datarequest;
   logic npc_change, pc_WEN;
+  logic dpif_halt;
 
   modport hi (
     input idex_DataRead, idex_rt, ifid_rs, ifid_rt,
@@ -25,6 +26,7 @@ interface hazard_unit_if;
     input flushes,
     input npc_change,
     input exmem_datarequest,
+    input dpif_halt,
     output npipe_stall,
     output ifid_FLUSH, idex_FLUSH,
     output pc_WEN

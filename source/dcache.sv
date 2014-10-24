@@ -28,8 +28,8 @@ typedef struct packed {
 } frame_value_t;
 
 typedef enum bit [3:0]{
-  IDLE, WRITEBACK_READ1, WRITEBACK_READ2, FETCH_READ1, FETCH_READ2,
-  ALLOCATE, WRITEBACK_WRITE1, WRITEBACK_WRITE2, FETCH_WRITE
+  IDLE, WRITEBACK0, WRITEBACK1, FETCH0, FETCH1, FETCH_WRITE,
+  FLUSH0, FLUSH1, COUNT_SET, FLUSH_END
 } state_t;
 
 parameter CPUID = 0;
@@ -48,10 +48,14 @@ frame_value_t n_frame_value;
 address_t address;
 logic tag_WEN, WEN, dirty, waysel, new_way;
 logic cache_hit[NWAYS-1:0];
-word_t pikachu;
 logic n_lru;
+logic way_count, n_way_count;
+logic [3:0] frame_count;
+logic [3:0] n_frame_count;
+word_t hit_count;
+word_t n_hit_count;
+logic flush_wait;
 
-assign dcif.flushed = dcif.halt;
 assign address = dcif.dmemaddr;
 assign frame_tag = frame_tags[address.indexer];
 assign frame_value = frame_values[address.indexer];
@@ -78,21 +82,13 @@ always_comb begin
     end
   end
 end
-always_comb begin
-casez(address.blockoffset)
-  0: begin
-    pikachu = frame_value[waysel].value_0;
-  end
-  1: begin
-    pikachu = frame_value[waysel].value_1;
-  end
-endcase
-end
 
 //assign ccif.daddr = dcif.dmemaddr;
 assign n_frame_tag.tag = address.tag;
 assign dirty = frame_tag[lru[address.indexer]].dirty && frame_tag[lru[address.indexer]].valid ;
-assign dcif.dhit = (dcif.dmemREN && (cache_hit[0] || cache_hit[1])) || (dcif.dmemWEN && ((state == ALLOCATE) && dcif.dmemstore == pikachu) || (state != ALLOCATE && (cache_hit[0] || cache_hit[1])));
+assign dcif.dhit = cache_hit[0] || cache_hit[1];
+assign new_way = lru[address.indexer];
+
 integer i, j;
 always_ff @(posedge CLK, negedge nRST) begin
   if(nRST == 0) begin
@@ -112,93 +108,115 @@ end
 always_ff @ (posedge CLK, negedge nRST) begin
   if (nRST == 0) begin
     state <= IDLE;
+    frame_count <= '0;
+    way_count <= '0;
+    hit_count <= '0;
   end
   else begin
     state <= n_state;
     lru[address.indexer] <= n_lru;
+    frame_count <= n_frame_count;
+    way_count <= n_way_count;
+    hit_count <= n_hit_count;
   end
 end
 
 always_comb begin
+  n_frame_count = frame_count;
   casez(state)
     IDLE: begin
-      if(dcif.dmemREN && (!cache_hit[0] && !cache_hit[1]) && dirty) begin
-        n_state = WRITEBACK_READ1;
+      if((dcif.dmemWEN | dcif.dmemREN) && (!cache_hit[0] && !cache_hit[1]) && dirty) begin
+        n_state = WRITEBACK0;
       end
       else if(dcif.dmemREN && (!cache_hit[0] && !cache_hit[1]) && !dirty) begin
-        n_state = FETCH_READ1;
-      end
-      else if(dcif.dmemWEN && (cache_hit[0] || cache_hit[1])) begin
-        n_state = ALLOCATE;
-      end
-      else if(dcif.dmemWEN && (!cache_hit[0] && !cache_hit[1]) && dirty) begin
-        n_state = WRITEBACK_WRITE1;
+        n_state = FETCH0;
       end
       else if(dcif.dmemWEN && (!cache_hit[0] && !cache_hit[1]) && !dirty) begin
         n_state = FETCH_WRITE;
       end
+      else if(dcif.halt) begin
+        n_state = FLUSH0;
+      end
       else begin
         n_state = IDLE;
       end
     end
-    WRITEBACK_READ1: begin
+    WRITEBACK0: begin
       if(!ccif.dwait) begin
-        n_state = WRITEBACK_READ2;
+        n_state = WRITEBACK1;
       end
       else begin
-        n_state = WRITEBACK_READ1;
+        n_state = WRITEBACK0;
       end
     end
-    WRITEBACK_READ2: begin
+    WRITEBACK1: begin
       if(!ccif.dwait) begin
-        n_state = FETCH_READ1;
+        if(dcif.dmemWEN) begin
+          n_state = FETCH_WRITE;
+        end
+        else begin
+          n_state = FETCH0;
+        end
       end
       else begin
-        n_state = WRITEBACK_READ2;
+        n_state = WRITEBACK1;
       end
     end
-    FETCH_READ1: begin
+    FETCH0: begin
       if(!ccif.dwait) begin
-        n_state = FETCH_READ2;
+        n_state = FETCH1;
       end
       else begin
-        n_state = FETCH_READ1;
+        n_state = FETCH0;
       end
     end
-    FETCH_READ2: begin
+    FETCH1: begin
       if(!ccif.dwait) begin
         n_state = IDLE;
       end
       else begin
-        n_state = FETCH_READ2;
-      end
-    end
-    ALLOCATE: begin
-      n_state = IDLE;
-    end
-    WRITEBACK_WRITE1: begin
-      if(!ccif.dwait) begin
-        n_state = WRITEBACK_WRITE2;
-      end
-      else begin
-        n_state = WRITEBACK_WRITE1;
-      end
-    end
-    WRITEBACK_WRITE2: begin
-      if(!ccif.dwait) begin
-        n_state = FETCH_WRITE;
-      end
-      else begin
-        n_state = WRITEBACK_WRITE2;
+        n_state = FETCH1;
       end
     end
     FETCH_WRITE: begin
       if(!ccif.dwait) begin
-        n_state = ALLOCATE;
+        n_state = IDLE;
       end
       else begin
         n_state = FETCH_WRITE;
       end
+    end
+    FLUSH0: begin
+      if(frame_count >= NFRAMES) begin
+        n_state = COUNT_SET;
+        //n_state = FLUSH_END;
+      end
+      else if(!flush_wait) begin
+        n_state = FLUSH1;
+      end
+      else begin
+        n_state = FLUSH0;
+      end
+    end
+    FLUSH1: begin
+      if(!flush_wait) begin
+        n_state = FLUSH0;
+        n_frame_count = frame_count + 4'b1;
+      end
+      else begin
+        n_state = FLUSH1;
+      end
+    end
+    COUNT_SET: begin
+      if(!ccif.dwait) begin
+        n_state = FLUSH_END;
+      end
+      else begin
+        n_state = COUNT_SET;
+      end
+    end
+    FLUSH_END: begin
+      n_state = FLUSH_END;
     end
     default : n_state = IDLE;
   endcase
@@ -208,7 +226,7 @@ always_comb begin
   ccif.dREN = 0;
   ccif.dWEN = 0;
   ccif.daddr = '0;
-  new_way = 0;
+  dcif.flushed = 0;
   n_frame_value.value_0 = '0;
   n_frame_value.value_1 = '0;
   n_frame_tag.valid = 0;
@@ -216,64 +234,90 @@ always_comb begin
   ccif.dstore = 0;
   WEN = 0;
   n_lru = lru[address.indexer];
+  n_hit_count = hit_count;
+  flush_wait = 1;
+
   casez(state)
     IDLE: begin
+      if(dcif.dmemWEN && (cache_hit[0] || cache_hit[1])) begin
+        n_frame_value.value_0 = address.blockoffset ? frame_values[address.indexer][new_way].value_0 : dcif.dmemstore;
+        n_frame_value.value_1 = address.blockoffset ? dcif.dmemstore : frame_values[address.indexer][new_way].value_1;
+        n_frame_tag.valid = 1;
+        n_frame_tag.dirty = 1;
+        WEN = 1;
+      end
+      if(cache_hit[0] || cache_hit[1]) begin
+        n_hit_count = hit_count + 1;
+      end
       n_lru = (cache_hit[0] | cache_hit[1]) & ~waysel;
     end
-    WRITEBACK_READ1: begin
+    WRITEBACK0: begin
       ccif.dWEN = 1;
       ccif.daddr = { frame_tag[lru[address.indexer]].tag, address.indexer, 3'b000 };
       ccif.dstore = frame_value[lru[address.indexer]].value_0;
     end
-    WRITEBACK_READ2: begin
+    WRITEBACK1: begin
       ccif.dWEN = 1;
       ccif.daddr = { frame_tag[lru[address.indexer]].tag, address.indexer, 3'b100 };
       ccif.dstore = frame_value[lru[address.indexer]].value_1;
     end
-    FETCH_READ1: begin
+    FETCH0: begin
+      n_hit_count = hit_count - 1;
       ccif.dREN = 1;
       ccif.daddr = { address.tag, address.indexer, 3'b000 };
-      new_way = lru[address.indexer];
       n_frame_value.value_0 = ccif.dload;
       n_frame_value.value_1 = frame_values[address.indexer][new_way].value_1;
       n_frame_tag.valid = 0;
       WEN = 1;
     end
-    FETCH_READ2: begin
+    FETCH1: begin
       ccif.dREN = 1;
       ccif.daddr = { address.tag, address.indexer, 3'b100 };
-      new_way = lru[address.indexer];
       n_frame_value.value_0 = frame_values[address.indexer][new_way].value_0;
       n_frame_value.value_1 = ccif.dload;
       n_frame_tag.valid = 1;
       WEN = 1;
     end
-    ALLOCATE: begin
-      n_frame_value.value_0 = address.blockoffset ? frame_values[address.indexer][new_way].value_0 : dcif.dmemstore;
-      n_frame_value.value_1 = address.blockoffset ? dcif.dmemstore : frame_values[address.indexer][new_way].value_1;
-      n_frame_tag.valid = 1;
-      n_frame_tag.dirty = 1;
-      WEN = 1;
-    end
-    WRITEBACK_WRITE1: begin
-      ccif.dWEN = 1;
-      ccif.daddr = { frame_tag[lru[address.indexer]].tag, address.indexer, 3'b000 };
-      ccif.dstore = frame_value[lru[address.indexer]].value_0;
-    end
-    WRITEBACK_WRITE2: begin
-      ccif.dWEN = 1;
-      ccif.daddr = { frame_tag[lru[address.indexer]].tag, address.indexer, 3'b100 };
-      ccif.dstore = frame_value[lru[address.indexer]].value_1;
-    end
     FETCH_WRITE: begin
+      n_hit_count = hit_count - 1;
       ccif.dREN = 1;
       ccif.daddr = { address.tag, address.indexer, ~address.blockoffset, 2'b00 };
-      new_way = lru[address.indexer];
       n_frame_value.value_0 = address.blockoffset ? ccif.dload : dcif.dmemstore;
       n_frame_value.value_1 = address.blockoffset ? dcif.dmemstore : ccif.dload;
       n_frame_tag.valid = 1;
       n_frame_tag.dirty = 1;
       WEN = 1;
+    end
+    FLUSH0: begin
+      if(frame_tags[frame_count][way_count].dirty) begin
+        flush_wait = ccif.dwait;
+        ccif.dWEN = 1;
+        ccif.daddr = { frame_tag[frame_count].tag, frame_count, 3'b000 };
+        ccif.dstore = frame_value[frame_count].value_0;
+      end
+      else begin
+        flush_wait = 0;
+      end
+    end
+    FLUSH1: begin
+      if(frame_tags[frame_count][way_count].dirty) begin
+        flush_wait = ccif.dwait;
+        ccif.dWEN = 1;
+        ccif.daddr = { frame_tag[frame_count].tag, frame_count, 3'b100 };
+        ccif.dstore = frame_value[frame_count].value_1;
+      end
+      else begin
+        flush_wait = 0;
+      end
+      n_way_count = ~way_count;
+    end
+    COUNT_SET: begin
+      ccif.dWEN = 1;
+      ccif.daddr = 32'h3100;
+      ccif.dstore = hit_count;
+    end
+    FLUSH_END: begin
+      dcif.flushed = 1;
     end
   endcase
 end

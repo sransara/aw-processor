@@ -16,7 +16,10 @@ module hazard_unit (
   always_comb
   begin
     huif.npipe_stall = IFID_STALL;
-    if(huif.idex_DataRead & ((huif.idex_rt == huif.ifid_rs) | (huif.idex_rt == huif.ifid_rt)))
+    if(huif.dpif_halt) begin
+      huif.npipe_stall = FULL_STALL;
+    end
+    else if(huif.idex_DataRead & ((huif.idex_rt == huif.ifid_rs) | (huif.idex_rt == huif.ifid_rt)))
     begin
       huif.npipe_stall = IDEX_STALL;
     end
