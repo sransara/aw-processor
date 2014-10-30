@@ -14,7 +14,7 @@ interface hazard_unit_if;
   regbits_t idex_rt, ifid_rs, ifid_rt;
   logic dpif_ihit, dpif_dhit, idex_Halt;
   pipe_stall_t npipe_stall;
-  logic ifid_FLUSH, idex_FLUSH, exmem_FLUSH, memwb_FLUSH;
+  logic ifid_FLUSH, idex_FLUSH;
   logic [0:1] flushes;
   logic exmem_datarequest;
   logic npc_change, pc_WEN;

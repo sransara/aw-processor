@@ -9,9 +9,14 @@ import cpu_types_pkg::*, aww_types_pkg::*;
   cache_control_if.icache ccif
 );
 
+// Direct mapped cache with 1 frame per set
+// 1 word (or value) per block
+parameter CPUID = 0;
+parameter NSETS = 16;
+
 typedef struct packed {
   logic [25:0] tag;
-  logic [3:0] indexer; // [log2(NFRAMES)-1 : 0]
+  logic [3:0] indexer; // [log2(NSETS)-1 : 0]
   logic [1:0] blockoffset;
 } address_t;
 
@@ -28,40 +33,47 @@ typedef enum bit {
   IDLE, FETCH
 } state_t;
 
-parameter CPUID = 0;
-parameter NFRAMES = 16;
-
 state_t state;
 state_t n_state;
-frame_tag_t frame_tags [NFRAMES-1:0];
+// set_tags [ frame_tag ]
+frame_tag_t set_tags [NSETS-1:0];
 frame_tag_t frame_tag, n_frame_tag;
-frame_value_t frame_values [NFRAMES-1:0];
+// set_values [ frame_value ]
+frame_value_t set_values [NSETS-1:0];
 frame_value_t frame_value, n_frame_value;
+
 address_t address;
+word_t imemload;
 logic WEN, cache_hit;
 
 assign address = dcif.imemaddr;
-assign frame_tag = frame_tags[address.indexer];
-assign frame_value = frame_values[address.indexer];
+assign frame_tag = set_tags[address.indexer];
+assign frame_value = set_values[address.indexer];
 assign cache_hit = (frame_tag.valid & (frame_tag.tag == address.tag));
-assign dcif.ihit = cache_hit;
-assign dcif.imemload = frame_value.value;
-assign ccif.iaddr = dcif.imemaddr;
-assign n_frame_tag.valid = 1;
+
+assign dcif.ihit = cache_hit === 1;
+assign dcif.imemload = cache_hit ? frame_value.value :  imemload;
+assign ccif.iaddr[CPUID] = dcif.imemaddr;
+
+assign n_frame_tag.valid = ~ccif.iwait[CPUID];
 assign n_frame_tag.tag = address.tag;
-assign n_frame_value.value = ccif.iload;
+assign n_frame_value.value = ccif.iload[CPUID];
 
-
+integer i;
 always_ff @(posedge CLK, negedge nRST) begin
   if(nRST == 0) begin
-    integer i;
-    for(i = 0; i < NFRAMES; i++) begin
-      frame_tags[i].valid = 1'b0;
+    for(i = 0; i < NSETS; i++) begin
+      set_tags[i].valid <= 1'b0;
     end
   end
-  else if(WEN) begin
-    frame_values[address.indexer] = n_frame_value;
-    frame_tags[address.indexer] = n_frame_tag;
+  else begin
+    if(cache_hit) begin
+      imemload <= frame_value.value;
+    end
+    else if(WEN) begin
+      set_values[address.indexer] <= n_frame_value;
+      set_tags[address.indexer] <= n_frame_tag;
+    end
   end
 end
 
@@ -85,7 +97,7 @@ always_comb begin
       end
     end
     FETCH: begin
-      if(ccif.iwait) begin
+      if(ccif.iwait[CPUID]) begin
         n_state = FETCH;
       end
       else begin
@@ -99,15 +111,15 @@ end
 always_comb begin
   casez(state)
     IDLE: begin
-      ccif.iREN = 0;
+      ccif.iREN[CPUID] = 0;
       WEN = 0;
     end
     FETCH: begin
-      ccif.iREN = 1;
+      ccif.iREN[CPUID] = 1;
       WEN = 1;
     end
     default: begin
-      ccif.iREN = 0;
+      ccif.iREN[CPUID] = 0;
       WEN = 0;
     end
   endcase
