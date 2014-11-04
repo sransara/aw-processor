@@ -31,7 +31,7 @@ runfname = args.file if args.file else ''
 
 final_report = []
 errors = False
-testdir = './asmFiles/'
+testdir = './asmFiles.b/'
 print("Testing " + sym)
 for fname in os.listdir(testdir):
     std = '' if args.verbose else ' > /dev/null'
@@ -44,7 +44,7 @@ for fname in os.listdir(testdir):
         myout = 'memcpu.hex'
 
         print("-- Testing file:", fname)
-        recommand = 'rm -f ' + myout + '; asm asmFiles/' + fname + '; sim -c > /dev/null;'
+        recommand = 'rm -f ' + myout + '; asm ' + testdir + fname + '; sim -c > /dev/null;'
         reout = os.system(recommand)
         print(recommand)
 

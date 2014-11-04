@@ -32,7 +32,7 @@ typedef struct packed {
   word_t [NWORDS-1:0] values;
 } frame_value_t;
 
-typedef enum bit [3:0]{
+typedef enum bit [3:0] {
   IDLE, WRITEBACK0, WRITEBACK1, FETCH0, FETCH1, FETCH_WRITE,
   FLUSH0, FLUSH1, COUNT_SET, FLUSH_END
 } state_t;
@@ -42,24 +42,24 @@ state_t n_state;
 // { set_tags [ NSETS * set_tag [ NWAYS * frame_tag ] ] }
 frame_tag_t [NWAYS-1:0] set_tags [NSETS-1:0];
 frame_tag_t [NWAYS-1:0] set_tag;
-frame_tag_t frame_tag, n_frame_tag, wframe_tag;
+frame_tag_t frame_tag, n_frame_tag, w_frame_tag;
 // { set_values [ NSETS * set_value [ NWAYS * frame_value ] ] }
 frame_value_t [NWAYS-1:0] set_values [NSETS-1:0];
 frame_value_t [NWAYS-1:0] set_value;
-frame_value_t frame_value, n_frame_value, wframe_value;
+frame_value_t frame_value, n_frame_value, w_frame_value;
 // lru, this method only works for NWAYS = 2
 logic lrus [NSETS-1:0]; // ~last used way
 logic n_lru;
 
 logic tag_WEN, value_WEN;
 logic cache_hit;
-logic way_select, way_wselect;
-logic dirty_wframe;
+logic way_select, w_way_select;
+logic w_dirty_frame;
 address_t address;
 
 logic way_count, n_way_count;
-logic [3:0] frame_count;
-logic [3:0] n_frame_count;
+logic [3:0] set_count;
+logic [3:0] n_set_count;
 word_t hit_count, n_hit_count;
 logic flush_wait;
 
@@ -73,16 +73,16 @@ assign way_select = (set_tag[1].valid & (set_tag[1].tag == address.tag)) ? 1'b1 
 assign dcif.dmemload = frame_value.values[address.blockoffset];
 assign dcif.dhit = (cache_hit === 1) & (dcif.dmemWEN | dcif.dmemREN);
 
-assign way_wselect = cache_hit ? way_select : lrus[address.indexer];
-assign wframe_tag = set_tag[way_wselect];
-assign wframe_value = set_value[way_wselect];
-assign dirty_wframe = wframe_tag.dirty & wframe_tag.valid;
+assign w_way_select = cache_hit ? way_select : lrus[address.indexer];
+assign w_frame_tag = set_tag[w_way_select];
+assign w_frame_value = set_value[w_way_select];
+assign w_dirty_frame = w_frame_tag.dirty & w_frame_tag.valid;
 
 integer i, j;
 always_ff @(posedge CLK, negedge nRST) begin
   if(nRST == 0) begin
     state <= IDLE;
-    frame_count <= '0;
+    set_count <= '0;
     way_count <= '0;
     hit_count <= '0;
     for(i = 0; i < NSETS; i++) begin
@@ -95,13 +95,13 @@ always_ff @(posedge CLK, negedge nRST) begin
   end
   else begin
     if(value_WEN) begin
-      set_values[address.indexer][way_wselect] <= n_frame_value;
+      set_values[address.indexer][w_way_select] <= n_frame_value;
     end
     if(tag_WEN) begin
-      set_tags[address.indexer][way_wselect] <= n_frame_tag;
+      set_tags[address.indexer][w_way_select] <= n_frame_tag;
     end
     state <= n_state;
-    frame_count <= n_frame_count;
+    set_count <= n_set_count;
     way_count <= n_way_count;
     hit_count <= n_hit_count;
     lrus[address.indexer] <= n_lru;
@@ -111,13 +111,13 @@ end
 always_comb begin
   casez(state)
     IDLE: begin
-      if((dcif.dmemWEN | dcif.dmemREN) & ~cache_hit & dirty_wframe) begin
+      if((dcif.dmemWEN | dcif.dmemREN) & ~cache_hit & w_dirty_frame) begin
         n_state = WRITEBACK0;
       end
-      else if(dcif.dmemREN & ~cache_hit & ~dirty_wframe) begin
+      else if(dcif.dmemREN & ~cache_hit & ~w_dirty_frame) begin
         n_state = FETCH0;
       end
-      else if(dcif.dmemWEN & ~cache_hit & ~dirty_wframe) begin
+      else if(dcif.dmemWEN & ~cache_hit & ~w_dirty_frame) begin
         n_state = FETCH_WRITE;
       end
       else if(dcif.halt) begin
@@ -173,7 +173,7 @@ always_comb begin
       end
     end
     FLUSH0: begin
-      if(frame_count >= NSETS) begin
+      if(set_count >= NSETS) begin
         n_state = COUNT_SET;
       end
       else if(~flush_wait) begin
@@ -218,7 +218,7 @@ always_comb begin
 
   tag_WEN = 0; value_WEN = 0;
   n_lru = lrus[address.indexer];
-  n_frame_count = frame_count;
+  n_set_count = set_count;
   n_hit_count = hit_count;
   n_way_count = way_count;
   flush_wait = 1;
@@ -238,20 +238,20 @@ always_comb begin
       end
       if((dcif.dmemREN | dcif.dmemWEN) & cache_hit) begin
         n_hit_count = hit_count + 1;
-        n_lru = ~way_wselect;
+        n_lru = ~w_way_select;
       end
     end
     WRITEBACK0: begin
       ccif.dREN[CPUID] = 0;
       ccif.dWEN[CPUID] = 1;
-      ccif.daddr[CPUID] = word_t'({ wframe_tag.tag, address.indexer, 3'b000 }); // blockoffset = 0
-      ccif.dstore[CPUID] = wframe_value.values[0];
+      ccif.daddr[CPUID] = word_t'({ w_frame_tag.tag, address.indexer, 3'b000 }); // blockoffset = 0
+      ccif.dstore[CPUID] = w_frame_value.values[0];
     end
     WRITEBACK1: begin
       ccif.dREN[CPUID] = 0;
       ccif.dWEN[CPUID] = 1;
-      ccif.daddr[CPUID] = word_t'({ wframe_tag.tag, address.indexer, 3'b100 });
-      ccif.dstore[CPUID] = wframe_value.values[1];
+      ccif.daddr[CPUID] = word_t'({ w_frame_tag.tag, address.indexer, 3'b100 });
+      ccif.dstore[CPUID] = w_frame_value.values[1];
     end
     FETCH0: begin
       if(~ccif.dwait[CPUID]) begin
@@ -268,7 +268,7 @@ always_comb begin
       ccif.dREN[CPUID] = 1;
       ccif.dWEN[CPUID] = 0;
       ccif.daddr[CPUID] = word_t'({ address.tag, address.indexer, 3'b100 });
-      n_frame_value.values[0] = wframe_value.values[0];
+      n_frame_value.values[0] = w_frame_value.values[0];
       n_frame_value.values[1] = ccif.dload[CPUID];
       n_frame_tag.valid = ~ccif.dwait[CPUID];
       n_frame_tag.dirty = 0;
@@ -291,11 +291,11 @@ always_comb begin
     end
     FLUSH0: begin
       ccif.dREN[CPUID] = 0;
-      if(set_tags[frame_count][way_count].dirty) begin
+      if(set_tags[set_count][way_count].dirty) begin
         flush_wait = ccif.dwait[CPUID];
         ccif.dWEN[CPUID] = 1;
-        ccif.daddr[CPUID] = { set_tags[frame_count][way_count].tag, frame_count[2:0], 3'b000 };
-        ccif.dstore[CPUID] = set_values[frame_count][way_count].values[0];
+        ccif.daddr[CPUID] = { set_tags[set_count][way_count].tag, set_count[2:0], 3'b000 };
+        ccif.dstore[CPUID] = set_values[set_count][way_count].values[0];
       end
       else begin
         ccif.dWEN[CPUID] = 0;
@@ -305,13 +305,13 @@ always_comb begin
     end
     FLUSH1: begin
       ccif.dREN[CPUID] = 0;
-      if(set_tags[frame_count][way_count].dirty) begin
+      if(set_tags[set_count][way_count].dirty) begin
         flush_wait = ccif.dwait[CPUID];
         ccif.dWEN[CPUID] = 1;
-        ccif.daddr[CPUID] = { set_tags[frame_count][way_count].tag, frame_count[2:0], 3'b100 };
-        ccif.dstore[CPUID] = set_values[frame_count][way_count].values[1];
+        ccif.daddr[CPUID] = { set_tags[set_count][way_count].tag, set_count[2:0], 3'b100 };
+        ccif.dstore[CPUID] = set_values[set_count][way_count].values[1];
         if(~ccif.dwait[CPUID]) begin
-          n_frame_count = way_count ? frame_count + 1'b1 : frame_count;
+          n_set_count = way_count ? set_count + 1'b1 : set_count;
           n_way_count = ~way_count;
         end
       end
@@ -319,7 +319,7 @@ always_comb begin
         ccif.dWEN[CPUID] = 0;
         flush_wait = 0;
         ccif.daddr[CPUID] = word_t'('0);
-        n_frame_count = way_count ? frame_count + 1'b1 : frame_count;
+        n_set_count = way_count ? set_count + 1'b1 : set_count;
         n_way_count = ~way_count;
       end
     end
