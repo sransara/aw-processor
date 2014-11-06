@@ -18,7 +18,7 @@ interface cache_control_if;
   import cpu_types_pkg::*;
 
   // access with cpuid on each processor
-  parameter CPUS = 1;
+  parameter CPUS = 2;
 
   // arbitration
   logic   [CPUS-1:0]       iwait, dwait, iREN, dREN, dWEN;
@@ -78,4 +78,5 @@ interface cache_control_if;
   );
 endinterface
 
-`://engineering.purdue.edu/~ece437l/labs/lab12/figures/lab12__1.png https://engineering.purdue.edu/~ece437l/labs/lab12/figures/lab12__1.png endif //CACHE_CONTROL_IF_VH
+`endif
+//CACHE_CONTROL_IF_VH
