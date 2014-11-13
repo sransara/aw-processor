@@ -20,10 +20,10 @@ module memory_control (
   parameter CPUS = 2;
   // parameter CPUID = 0;
   typedef enum bit [4:0] {
-    IDLE, WASTEREAD0, WASTEREAD1,
+    IDLE, READ_REQ_0, READ_REQ_1,
     INVALID_1, SEND_1, READ_1, SNOOP_1,
     INVALID_0, SEND_0, READ_0, SNOOP_0,
-    FLUSH_0, FLUSH_1, INSTR_0, INSTR_1, WASTE, WASTE0
+    FLUSH_0, FLUSH_1, INSTR_0, INSTR_1, INV_REQ_1, INV_REQ_0
   } state_t;
 
   state_t state;
@@ -52,16 +52,16 @@ module memory_control (
     casez(state)
       IDLE: begin
         if(ccif.cctrans[0] && ccif.ccwrite[0]) begin
-          nstate = WASTE;
+          nstate = INV_REQ_1;
         end
         else if(ccif.cctrans[0] && ~ccif.ccwrite[0]) begin
-          nstate = WASTEREAD1;
+          nstate = READ_REQ_1;
         end
         else if(ccif.cctrans[1] && ccif.ccwrite[1]) begin
-          nstate = WASTE0;
+          nstate = INV_REQ_0;
         end
         else if(ccif.cctrans[1] && ~ccif.ccwrite[1]) begin
-          nstate = WASTEREAD0;
+          nstate = READ_REQ_0;
         end
         else if(~ccif.cctrans[0] && ccif.dWEN[0]) begin
           nstate = FLUSH_0;
@@ -76,7 +76,7 @@ module memory_control (
           nstate = IDLE;
         end
       end
-      WASTE: begin
+      INV_REQ_1: begin
         nstate = INVALID_1;
       end
       INVALID_1: begin // servicing cahce 0, invalidate 1
@@ -90,7 +90,7 @@ module memory_control (
           nstate = INVALID_1;
         end
       end
-      WASTEREAD1: begin
+      READ_REQ_1: begin
         nstate = SNOOP_1;
       end
       SEND_1: begin
@@ -117,7 +117,7 @@ module memory_control (
           nstate = READ_1;
         end
       end
-      WASTE0: begin
+      INV_REQ_0: begin
         nstate = INVALID_0;
       end
       INVALID_0: begin
@@ -147,7 +147,7 @@ module memory_control (
           nstate = IDLE;
         end
       end
-      WASTEREAD0: begin
+      READ_REQ_0: begin
         nstate = SNOOP_0;
       end
       SNOOP_0: begin
@@ -224,7 +224,7 @@ module memory_control (
         ccif.ccsnoopaddr[0] = 0;
         ccif.ccsnoopaddr[1] = 0;
       end
-      WASTE: begin
+      INV_REQ_1: begin
         ccif.ccwait[1] = 1;
         ccif.ccinv[1] = 1;
         ccif.ccsnoopaddr[1] = ccif.daddr[0];
@@ -308,7 +308,7 @@ module memory_control (
         ccif.ccsnoopaddr[0] = 0;
         ccif.ccsnoopaddr[1] = 0;
       end
-      WASTEREAD1: begin
+      READ_REQ_1: begin
         ccif.ccsnoopaddr[1] = ccif.daddr[0];
         ccif.ccwait[1] = 1;
         /////////////////////////////
@@ -350,7 +350,7 @@ module memory_control (
         ccif.ccinv[1] = 0;
         ccif.ccsnoopaddr[0] = 0;
       end
-      WASTE0: begin
+      INV_REQ_0: begin
         ccif.ccwait[0] = 1;
         ccif.ccinv[0] = 1;
         ccif.ccsnoopaddr[0] = ccif.daddr[1];
@@ -434,7 +434,7 @@ module memory_control (
         ccif.ccsnoopaddr[0] = 0;
         ccif.ccsnoopaddr[1] = 0;
       end
-      WASTEREAD0: begin
+      READ_REQ_0: begin
         ccif.ccsnoopaddr[0] = ccif.daddr[1];
         ccif.ccwait[0] = 1;
         /////////////////////////////

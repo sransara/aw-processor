@@ -308,7 +308,7 @@ always @(*) begin
       ccif.cctrans[CPUID] = 1;
       ccif.ccwrite[CPUID] = 1;
       ccif.dstore[CPUID] = frame_value.values[address.blockoffset];
-      ccif.daddr[CPUID] = word_t'({ address.tag, address.indexer, address.blockoffset, 2'b00 }); // blockoffset = 0
+      ccif.daddr[CPUID] = address;
       ccif.dWEN[CPUID] = 1;
     end
     SEND_READDATA0: begin
