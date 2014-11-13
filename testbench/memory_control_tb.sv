@@ -72,7 +72,7 @@ import cpu_types_pkg::*;
     @(posedge CLK);
     @(posedge CLK);
     // C0 I->M C1 I->I
-    display("C0 I->M C1 I->I %gns",$time);
+    $display("C0 I->M C1 I->I %gns",$time);
     ccif.dWEN[0] = 0;
     ccif.dWEN[1] = 0;
     ccif.dREN[0] = 1;
@@ -84,16 +84,42 @@ import cpu_types_pkg::*;
     ccif.dREN[0] = 0;
     @(posedge CLK);
     // C0 I->S C1 M->S
-    display("C0 I->S C1 M-> S %gns",$time);
+    $display("C0 I->S C1 M-> S %gns",$time);
     ccif.dREN[0] = 1;
+    ccif.dWEN[1] = 1;
     ccif.cctrans[0] = 1;
+    ccif.cctrans[1] = 1;
     ccif.ccwrite[0] = 0;
-    wait(ccif.ccinv[1]);
     wait(ccif.ramstate == ACCESS);
     @(posedge CLK);
     @(posedge CLK);
+    ccif.dREN[0] = 0;
+    ccif.dREN[1] = 0;
     ccif.dWEN[1] = 0;
-    ccif.dWEN[1] = 0;
+    ccif.cctrans[1] = 0;
+    @(posedge CLK);
+    // C0 I->S C1 S->S
+    $display("C0 I->S C1 S->S %gns",$time);
+    ccif.dREN[0] = 1;
+    ccif.cctrans[0] = 1;
+    ccif.ccwrite[0] = 0;
+    wait(ccif.ramstate == ACCESS);
+    @(posedge CLK);
+    @(posedge CLK);
+    ccif.daddr[0] = 32'b1100;
+    wait(ccif.ramstate == ACCESS);
+    @(posedge CLK);
+    ccif.dREN[0] = 0;
+    ccif.dREN[1] = 0;
+    @(posedge CLK);
+    // C0 S->M C1 M->I
+    $display("C0 S->M C1 M->I %gns",$time);
+    ccif.dWEN[0] = 1;
+    ccif.cctrans[0] = 1;
+    ccif.ccwrite[0] = 1;
+    wait(ccif.ccinv[1]);
+    @(posedge CLK);
+    ccif.dWEN[0] = 0;
+    @(posedge CLK);
   end
-
 endprogram
