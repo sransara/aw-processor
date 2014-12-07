@@ -33,7 +33,6 @@ unlock:
 mainp0:
   push  $ra                 # save return address
   ori   $a0, $zero, l1      # move lock to arguement register
-
   jal   lock                # try to aquire the lock
   # critical code segment
   ori   $t2, $zero, res

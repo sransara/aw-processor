@@ -6,7 +6,8 @@ import cpu_types_pkg::*, aww_types_pkg::*;
 (
   input logic CLK, nRST,
   datapath_cache_if.icache dcif,
-  cache_control_if.icache ccif
+  cache_control_if ccif
+  //iwait, iload, iREN, iaddr
 );
 
 // Direct mapped cache with 1 frame per set

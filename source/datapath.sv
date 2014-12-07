@@ -76,7 +76,8 @@ pipeline_reg PIPER (
   assign idex_n.Jal = cuif.Jal;
   assign idex_n.Jr = cuif.Jr;
   assign idex_n.Halt = cuif.Halt;
-
+  assign idex_n.StoreConditional = cuif.StoreConditional;
+  assign idex_n.LinkedLoad = cuif.LinkedLoad;
   assign idex_n.rdat1 = rfif.rdat1;
   assign idex_n.rdat2 = rfif.rdat2;
 
@@ -94,7 +95,8 @@ pipeline_reg PIPER (
   assign exmem_n.ImmToReg = idex.ImmToReg;
   assign exmem_n.Jal = idex.Jal;
   assign exmem_n.Halt = idex.Halt;
-
+  assign exmem_n.StoreConditional = idex.StoreConditional;
+  assign exmem_n.LinkedLoad = idex.LinkedLoad;
   assign exmem_n.pc_plus = idex.pc_plus;
   // end EX and MEM
 
@@ -222,18 +224,27 @@ pipeline_reg PIPER (
     end
   // end pc glue
 
+  word_t rmwstate;
 // MEM
   // wdat
     always_comb
     begin
-      if(exmem.Jal)
+      if(exmem.Jal) begin
         exmem_wdat = exmem.pc_plus;
-      else if(exmem.ImmToReg)
+      end
+      else if(exmem.ImmToReg) begin
         // Zero padder
         exmem_wdat = word_t'({ exmem.imm, immwzeroes});
-      else
+      end
+      else if(exmem.StoreConditional) begin
+          exmem_wdat = dpif.dmemload;
+      end
+      else begin
         exmem_wdat = exmem.aluout;
+      end
     end
+
+    assign dpif.datomic = exmem.StoreConditional | exmem.LinkedLoad;
 
   // datacache
     assign dpif.dmemaddr = exmem.aluout;

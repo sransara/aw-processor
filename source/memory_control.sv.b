@@ -38,28 +38,17 @@ module memory_control (
     end
   end
 
-// always_ff@(posedge CLK, negedge nRST) begin
-// if(~nRST) begin
-//   ccif.ccsnoopaddr[0] <= 0;
-//   ccif.ccsnoopaddr[1] <= 1;
-// end
-// else if(ccif.cctrans[0] && ccif.ccwrite[0]) begin
-//   ccif.ccsnoopaddr[0] <= 0;
-//   ccif.ccsnoopaddr[1] <= ccif.daddr[0];
-// end
-// else if(ccif.cctrans[1] && ccif.ccwrite[1]) begin
-//   ccif.ccsnoopaddr[1] <= 0;
-//   ccif.ccsnoopaddr[0] <= ccif.daddr[1];
-// end
-// else if(ccif.cctrans[0] && ~ccif.ccwrite[0]) begin
-//   ccif.ccsnoopaddr[0] <= 0;
-//   ccif.ccsnoopaddr[1] <= ccif.daddr[0];
-// end
-// else if(ccif.cctrans[1] && ~ccif.ccwrite[1]) begin
-//   ccif.ccsnoopaddr[1] <= 0;
-//   ccif.ccsnoopaddr[0] <= ccif.daddr[1];
-// end
-// end
+  word_t daddr_0, daddr_1;
+  always_ff@(posedge CLK, negedge nRST) begin
+    if(~nRST) begin
+      daddr_0 = word_t'(0);
+      daddr_1 = word_t'(0);
+    end
+    else begin
+      daddr_0 <= ccif.daddr[0];
+      daddr_1 <= ccif.daddr[1];
+    end
+  end
 
   always_comb begin
     casez(state)
