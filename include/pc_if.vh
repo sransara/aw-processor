@@ -10,11 +10,11 @@ interface pc_if;
 
   word_t pc_plus;
   word_t npc, cpc;
-  logic wen;
+  logic WEN;
 
   // ports
   modport pci (
-    input wen, npc,
+    input WEN, npc,
     output cpc, pc_plus
   );
 

@@ -4,24 +4,24 @@
 module decoder
 import cpu_types_pkg::*;
 (
-  decoder_if.dif idecoded
+  decoder_if.dif instruction
 );
 
 r_t rtype;
 i_t itype;
 j_t jtype;
 
-assign rtype = idecoded.instruction;
-assign itype = idecoded.instruction;
-assign jtype = idecoded.instruction;
+assign rtype = instruction.load;
+assign itype = instruction.load;
+assign jtype = instruction.load;
 
-assign idecoded.opcode = rtype.opcode;
-assign idecoded.funct = rtype.funct;
-assign idecoded.shamt = rtype.shamt;
-assign idecoded.rd = rtype.rd;
-assign idecoded.rt = rtype.rt;
-assign idecoded.rs = rtype.rs;
-assign idecoded.imm = itype.imm;
-assign idecoded.addr = jtype.addr;
+assign instruction.opcode = rtype.opcode;
+assign instruction.funct = rtype.funct;
+assign instruction.shamt = rtype.shamt;
+assign instruction.rd = rtype.rd;
+assign instruction.rt = rtype.rt;
+assign instruction.rs = rtype.rs;
+assign instruction.imm = itype.imm;
+assign instruction.addr = jtype.addr;
 
 endmodule

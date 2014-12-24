@@ -18,7 +18,7 @@
 
 module system_tb;
   // clock period
-  parameter PERIOD = 20;
+  parameter PERIOD = 11;
 
   // signals
   logic CLK = 1, nRST;
@@ -103,7 +103,7 @@ program test(input logic CLK, output logic nRST, system_if.tb syif);
 
       syif.addr = i << 2;
       syif.REN = 1;
-      repeat (2) @(posedge CLK);
+      repeat (5) @(posedge CLK);
       if (syif.load === 0)
         continue;
       values = {8'h04,16'(i),8'h00,syif.load};
