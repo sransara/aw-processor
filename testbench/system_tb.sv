@@ -18,11 +18,7 @@
 
 module system_tb;
   // clock period
-<<<<<<< HEAD
-  parameter PERIOD = 11;
-=======
-  parameter PERIOD = 14;
->>>>>>> caches
+  parameter PERIOD = 18;
 
   // signals
   logic CLK = 1, nRST;

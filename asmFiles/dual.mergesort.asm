@@ -2,6 +2,8 @@
 #Optimized for 512 bit I$ 1024 bit D$
 #Author Adam Hendrickson ahendri@purdue.edu
 
+
+#CORE 0
 org 0x0000
   ori   $fp, $zero, 0xFFFC
   ori   $sp, $zero, 0xFFFC
@@ -18,18 +20,35 @@ org 0x0000
   addu  $a0, $a0, $t0
   or    $s3, $zero, $a0
   or    $s4, $zero, $a1
-  jal   insertion_sort
   or    $a0, $zero, $s1
   or    $a1, $zero, $s2
   or    $a2, $zero, $s3
   or    $a3, $zero, $s4
   ori   $t0, $zero, sorted
   push  $t0
+  ori   $t1, $zero, flag
+wait1:
+  lw    $t2, 0($t1)
+  beq   $t2, $zero, wait1
   jal   merge
   addiu $sp, $sp, 4
   halt
 
-
+#CORE 1
+org 0x0200
+  ori   $fp, $zero, 0x3FFC
+  ori   $sp, $zero, 0x3FFC
+  ori   $a0, $zero, data
+  lw    $s0, size($zero)
+  srl   $a1, $s0, 1
+  sll   $t0, $a1, 2
+  addu  $a0, $a0, $t0
+  subu  $a1, $s0, $a1
+  jal   insertion_sort
+  ori   $t0, $zero, flag
+  ori   $t1, $zero, 1
+  sw    $t1, 0($t0)
+  halt
 
 #void insertion_sort(int* $a0, int $a1)
 # $a0 : pointer to data start
@@ -112,7 +131,9 @@ m_end:
 #--------------------------------------
 
 
-org 0x300
+org 0x400
+flag:
+cfw 0
 size:
 cfw 64
 data:
@@ -181,5 +202,5 @@ cfw 50
 cfw 7
 cfw 67
 
-org 0x500
+org 0x600
 sorted:

@@ -16,6 +16,7 @@ interface control_unit_if;
   logic BrEq, BrNeq, Jump, Jal, Jr;
   logic ExtOp, Halt;
   logic ShamToAlu, ImmToAlu;
+  logic LinkedLoad, StoreConditional;
 
   // ports
   modport ci (
@@ -26,7 +27,8 @@ interface control_unit_if;
     output  DataRead, DataWrite,
     output  ShamToAlu, ImmToAlu,
     output  BrEq, BrNeq, Jump, Jal, Jr,
-    output  ExtOp, Halt
+    output  ExtOp, Halt,
+    output  LinkedLoad, StoreConditional
   );
 
 endinterface

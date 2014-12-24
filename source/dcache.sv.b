@@ -352,8 +352,8 @@ always @(*) begin
       tag_WEN = ~ccif.dwait[CPUID] | ~frame_tag.dirty;
       ccif.cctrans[CPUID] = 1;
       ccif.ccwrite[CPUID] = frame_tag.dirty;
-      ccif.dstore[CPUID] = frame_value.values[address.blockoffset];
-      ccif.daddr[CPUID] = address;
+      ccif.dstore[CPUID] = frame_value.values[saddress.blockoffset];
+      ccif.daddr[CPUID] = saddress;
       ccif.dWEN[CPUID] = frame_tag.dirty;
       ccif.dREN[CPUID] = 0;
     end
@@ -366,7 +366,7 @@ always @(*) begin
       ccif.dstore[CPUID] = frame_value.values[0];
       ccif.dREN[CPUID] = 0;
       ccif.dWEN[CPUID] = 1;
-      ccif.daddr[CPUID] = word_t'({ address.tag, address.indexer, 3'b000 }); // blockoffset = 0
+      ccif.daddr[CPUID] = word_t'({ saddress.tag, saddress.indexer, 3'b000 }); // blockoffset = 0
     end
     SEND_READDATA1: begin
       n_frame_tag.dirty = 0;
@@ -377,14 +377,14 @@ always @(*) begin
       ccif.dstore[CPUID] = frame_value.values[1];
       ccif.dWEN[CPUID] = 1;
       ccif.dREN[CPUID] = 0;
-      ccif.daddr[CPUID] = word_t'({ address.tag, address.indexer, 3'b100 }); // blockoffset = 1
+      ccif.daddr[CPUID] = word_t'({ saddress.tag, saddress.indexer, 3'b100 }); // blockoffset = 1
     end
     WRITEBACK0: begin
       ccif.ccwrite[CPUID] = 0;
       ccif.cctrans[CPUID] = 0;
       ccif.dREN[CPUID] = 0;
       ccif.dWEN[CPUID] = 1;
-      ccif.daddr[CPUID] = word_t'({ w_frame_tag.tag, address.indexer, 3'b000 }); // blockoffset = 0
+      ccif.daddr[CPUID] = word_t'({ w_frame_tag.tag, saddress.indexer, 3'b000 }); // blockoffset = 0
       ccif.dstore[CPUID] = w_frame_value.values[0];
     end
     WRITEBACK1: begin
@@ -392,7 +392,7 @@ always @(*) begin
       ccif.cctrans[CPUID] = 0;
       ccif.dREN[CPUID] = 0;
       ccif.dWEN[CPUID] = 1;
-      ccif.daddr[CPUID] = word_t'({ w_frame_tag.tag, address.indexer, 3'b100 });
+      ccif.daddr[CPUID] = word_t'({ w_frame_tag.tag, saddress.indexer, 3'b100 });
       ccif.dstore[CPUID] = w_frame_value.values[1];
     end
     FETCH0: begin
@@ -400,7 +400,7 @@ always @(*) begin
       ccif.ccwrite[CPUID] = 0;
       ccif.dREN[CPUID] = 1;
       ccif.dWEN[CPUID] = 0;
-      ccif.daddr[CPUID] = word_t'({ address.tag, address.indexer, 3'b000 }); // blockoffset = 0
+      ccif.daddr[CPUID] = word_t'({ saddress.tag, saddress.indexer, 3'b000 }); // blockoffset = 0
       n_frame_value.values[0] = ccif.dload[CPUID];
       // n_frame_value.values[1] = '0; will be replaced in next state
       value_WEN = ~ccif.ccwait[CPUID];
@@ -408,7 +408,7 @@ always @(*) begin
     FETCH1: begin
       ccif.dREN[CPUID] = 1;
       ccif.dWEN[CPUID] = 0;
-      ccif.daddr[CPUID] = word_t'({ address.tag, address.indexer, 3'b100 });
+      ccif.daddr[CPUID] = word_t'({ saddress.tag, saddress.indexer, 3'b100 });
       n_frame_value.values[0] = w_frame_value.values[0];
       n_frame_value.values[1] = ccif.dload[CPUID];
       n_frame_tag.valid = ~ccif.dwait[CPUID];
@@ -422,9 +422,9 @@ always @(*) begin
       ccif.dREN[CPUID] = 1;
       ccif.dWEN[CPUID] = 0;
       // set ccif.dload
-      ccif.daddr[CPUID] = word_t'({ address.tag, address.indexer, ~address.blockoffset, 2'b00 });
-      n_frame_value.values[0] = address.blockoffset ? ccif.dload[CPUID] : dcif.dmemstore;
-      n_frame_value.values[1] = address.blockoffset ? dcif.dmemstore : ccif.dload[CPUID];
+      ccif.daddr[CPUID] = word_t'({ saddress.tag, saddress.indexer, ~saddress.blockoffset, 2'b00 });
+      n_frame_value.values[0] = saddress.blockoffset ? ccif.dload[CPUID] : dcif.dmemstore;
+      n_frame_value.values[1] = saddress.blockoffset ? dcif.dmemstore : ccif.dload[CPUID];
       n_frame_tag.valid = ~ccif.dwait[CPUID];
       tag_WEN = ~ccif.ccwait[CPUID];
       value_WEN = ~ccif.ccwait[CPUID];

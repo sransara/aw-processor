@@ -51,6 +51,8 @@ package aww_types_pkg;
     logic Jal;
     logic Jr;
     logic Halt;
+    logic LinkedLoad;
+    logic StoreConditional;
 
     // from Register
     word_t rdat1;
@@ -78,7 +80,8 @@ package aww_types_pkg;
     logic ImmToReg;
     logic Jal;
     logic Halt;
-
+    logic LinkedLoad;
+    logic StoreConditional;
     word_t rdat2;
 
     regbits_t wsel; // mux output for wsel

@@ -28,6 +28,8 @@ assign  cuif.ImmToAlu= (opcode !== RTYPE) && (opcode !== BEQ) && (opcode !== BNE
 
 assign cuif.DataRead = (opcode === LW) || (opcode === LL);
 assign cuif.DataWrite = (opcode === SW) || (opcode === SC);
+assign cuif.LinkedLoad = opcode === LL;
+assign cuif.StoreConditional = opcode === SC;
 
 assign cuif.BrEq = (opcode === BEQ);
 assign cuif.BrNeq = (opcode === BNE);
