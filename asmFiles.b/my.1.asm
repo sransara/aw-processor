@@ -6,7 +6,8 @@ org 0x0000
   lui $4, 0xDEAD
   sw $3, 0($1)
   jal jump_here
-  lw $5, 0($1)
+  ori $5, $0, 0x1337
+  #lw $5, 0($1)
   or $5, $5, $4
   sw $5, 4($1)
   halt

@@ -42,7 +42,6 @@ assign cuif.Halt = (opcode === HALT);
   // alu control logic
   always_comb
   begin
-    cuif.aluop = ALU_ADD;
     casez (opcode)
       RTYPE:  cuif.aluop = alu_ftop;
       ADDIU:  cuif.aluop = ALU_ADD;
@@ -51,12 +50,12 @@ assign cuif.Halt = (opcode === HALT);
       SLTI:   cuif.aluop = ALU_SLT;
       SLTIU:  cuif.aluop = ALU_SLTU;
       XORI:   cuif.aluop = ALU_XOR;
+      default: cuif.aluop = ALU_ADD;
     endcase
   end
-  // alu func_t to aluop_t
+
   always_comb
   begin
-    alu_ftop = ALU_ADD;
     casez (funct)
       SLL:  alu_ftop = ALU_SLL;
       SRL:  alu_ftop = ALU_SRL;
@@ -68,6 +67,7 @@ assign cuif.Halt = (opcode === HALT);
       NOR:  alu_ftop = ALU_NOR;
       SLT:  alu_ftop = ALU_SLT;
       SLTU: alu_ftop = ALU_SLTU;
+      default: alu_ftop = ALU_ADD;
     endcase
   end
 

@@ -18,7 +18,11 @@
 
 module system_tb;
   // clock period
+<<<<<<< HEAD
   parameter PERIOD = 11;
+=======
+  parameter PERIOD = 14;
+>>>>>>> caches
 
   // signals
   logic CLK = 1, nRST;
@@ -103,7 +107,7 @@ program test(input logic CLK, output logic nRST, system_if.tb syif);
 
       syif.addr = i << 2;
       syif.REN = 1;
-      repeat (5) @(posedge CLK);
+      repeat (4) @(posedge CLK);
       if (syif.load === 0)
         continue;
       values = {8'h04,16'(i),8'h00,syif.load};

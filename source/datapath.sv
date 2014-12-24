@@ -276,6 +276,7 @@ branch_predictor BP(CLK, nRST, bpif);
   // datacache
     assign dpif.imemREN = ~memwb.Halt;
     assign dpif.halt = memwb.Halt;
+    assign huif.dpif_halt = memwb.Halt;
   // reg file glue logic - writes
     assign rfif.wsel = memwb.wsel;
     assign rfif.WEN = memwb.RegWr;

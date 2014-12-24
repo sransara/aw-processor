@@ -16,9 +16,9 @@ module pipeline (
 parameter PC0 = 0;
 
   // bus interface
-  datapath_cache_if         dcif ();
+  datapath_cache_if dcif ();
   // coherence interface
-  cache_control_if #(.CPUS(1))         ccif ();
+  cache_control_if #(.CPUS(1)) ccif ();
 
   // map datapath
   datapath #(.PC_INIT(PC0)) DP (CLK, nRST, dcif);
