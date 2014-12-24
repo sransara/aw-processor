@@ -19,6 +19,7 @@ parser.add_argument('-n', '--synth', help='synth')
 parser.add_argument('-v', '--verbose', help='print all kinds of output', action='store_true')
 parser.add_argument('-x', '--noout', help='print no outputs from makes', action='store_true')
 parser.add_argument('-d', '--differences', help='print differences', action='store_true')
+parser.add_argument('-t', '--tmobilenotify', help='put your tmobile number here, to get a text when done')
 
 args = parser.parse_args()
 sym = 'sim'
@@ -44,7 +45,7 @@ for fname in os.listdir(testdir):
         myout = 'memcpu.hex'
 
         print("-- Testing file:", fname)
-        recommand = 'rm ' + myout + '; asm asmFiles/' + fname + '; sim > /dev/null;'
+        recommand = 'rm -f ' + myout + '; asm asmFiles/' + fname + '; sim > /dev/null;'
         reout = os.system(recommand)
         print(recommand)
 
@@ -92,12 +93,22 @@ if args.syn:
   print("- Tested make.syn")
 elif args.synth:
   print("- Tested synth with frequency " + args.synth)
-  os.system('grep --color "parameter PERIOD" ./testbench/system_tb.sv');
   os.system('grep --color "[1-9] violated" system.log');
+  os.system('grep -m 1 --color "Total logic elements" system.log');
+  os.system('grep -m 1 --color "Total combinational functions" system.log');
+  os.system('grep -m 1 --color "Total combinational functions" system.log');
+  os.system('grep -m 1 --color "Dedicated logic registers" system.log');
+  os.system('grep -m 1 --color "Total registers" system.log');
+  os.system('grep -m 1 --color "Total pins" system.log');
+  os.system('grep --color "parameter PERIOD" ./testbench/system_tb.sv');
   os.system("grep -n 'MHz\s*;\s*CPUCLK' ._system/system.sta.rpt | grep --color -P '[0-9]+\.[0-9]+ MHz'");
 else:
   print("- Tested make.sim")
 for p in final_report:
   print(p)
+
+if(args.tmobilenotify):
+  print('mailx -s "It\'s safe to come back now" < /dev/null "'+ args.tmobilenotify +'@tmomail.net"');
+  os.system('mailx -s "It\'s safe to come back now" < /dev/null "'+ args.tmobilenotify +'@tmomail.net"');
 
 sys.exit(0)
